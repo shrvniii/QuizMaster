@@ -49,3 +49,24 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
+
+# CSRF Trusted Origins for production HTTPS requests
+CSRF_TRUSTED_ORIGINS = []
+allowed_hosts = config('ALLOWED_HOSTS', default='').split(',')
+for host in allowed_hosts:
+    host = host.strip()
+    if host:
+        if host == '*':
+            continue
+        if host.startswith('.'):
+            CSRF_TRUSTED_ORIGINS.append(f"https://*{host}")
+            CSRF_TRUSTED_ORIGINS.append(f"http://*{host}")
+        else:
+            CSRF_TRUSTED_ORIGINS.append(f"https://{host}")
+            CSRF_TRUSTED_ORIGINS.append(f"http://{host}")
+
+# Auto-detect Render's external URL
+RENDER_EXTERNAL_URL = config('RENDER_EXTERNAL_URL', default=None)
+if RENDER_EXTERNAL_URL:
+    CSRF_TRUSTED_ORIGINS.append(RENDER_EXTERNAL_URL)
+
