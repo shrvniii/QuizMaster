@@ -160,13 +160,12 @@ class ParticipantImportView(LoginRequiredMixin, View):
                 
                 try:
                     suffix_val = int(roll_suffix)
-                    if not (0 <= suffix_val <= 199):
-                        error_rows.append(f"Row {row_num} (Roll {roll_number}): The last 3 digits of the roll number must be between 000 and 199.")
+                    if not (0 <= suffix_val <= 999):
+                        error_rows.append(f"Row {row_num} (Roll {roll_number}): The last 3 digits of the roll number must be between 000 and 999.")
                         continue
                 except ValueError:
                     error_rows.append(f"Row {row_num} (Roll {roll_number}): The last 3 digits of the roll number must be numeric.")
-                    continue
-                    
+                    continue                    
                 # Map group (ignore spaces and underscores)
                 group_clean = group_raw.replace(' ', '').replace('_', '')
                 if 'JUNIOR' in group_clean:

@@ -51,12 +51,12 @@ class Participant(models.Model):
                         'roll_number': f"The first 2 digits of the roll number ('{roll_school_code}') must match the selected school's code '{school_code}'."
                     })
                     
-        # 3. Last 3 digits must be between 000 and 199
+        # 3. Last 3 digits must be between 000 and 999
         last_three_str = self.roll_number[2:]
         try:
             last_three_val = int(last_three_str)
-            if not (0 <= last_three_val <= 199):
-                raise ValidationError({'roll_number': "The last 3 digits of the roll number must be between '000' and '199'."})
+            if not (0 <= last_three_val <= 999):
+                raise ValidationError({'roll_number': "The last 3 digits of the roll number must be between '000' and '999'."})
         except ValueError:
             raise ValidationError({'roll_number': 'The last 3 digits of the roll number must be numeric.'})
 
