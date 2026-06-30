@@ -77,7 +77,25 @@ class OMRPipelineTestCase(TestCase):
         for q in range(6, 50):
             student_marks[q] = [1] # Q7-Q50: A (Correct)
 
-        # Draw the bubbles on our mock sheet
+        # Draw Roll No bubbles for "02001" on the mock sheet
+        # Digits: [0, 2, 0, 0, 1]
+        roll_digits = [0, 2, 0, 0, 1]
+        roll_x_centers = [76, 111, 146, 181, 216]
+        
+        for col_idx, digit in enumerate(roll_digits):
+            cx = roll_x_centers[col_idx]
+            ox = int(50 + cx * 0.9)
+            
+            for row_idx in range(10):
+                cy = 260 + row_idx * 36
+                oy = int(50 + cy * (1100.0 / 1200.0))
+                
+                if row_idx == digit:
+                    cv2.circle(img, (ox, oy), 8, (0, 0, 0), -1) # Filled
+                else:
+                    cv2.circle(img, (ox, oy), 8, (0, 0, 0), 1)  # Empty
+        
+        # Draw the question bubbles on our mock sheet
         for q in range(50):
             col = 0 if q < 25 else 1
             row_idx = q if q < 25 else q - 25
@@ -106,10 +124,8 @@ class OMRPipelineTestCase(TestCase):
         _, img_encoded = cv2.imencode('.png', img)
         img_bytes = img_encoded.tobytes()
         
-        # Save OMR Submission
+        # Save OMR Submission without participant/answer_key to test auto-detection
         submission = OMRSubmission.objects.create(
-            participant=self.participant,
-            answer_key=self.answer_key,
             status='PENDING'
         )
         # Write image using Django File API
@@ -125,6 +141,10 @@ class OMRPipelineTestCase(TestCase):
         # Reload submission and result
         submission.refresh_from_db()
         self.assertEqual(submission.status, 'EVALUATED')
+        
+        # Verify auto-detection linked the correct participant and answer key
+        self.assertEqual(submission.participant, self.participant)
+        self.assertEqual(submission.answer_key, self.answer_key)
         
         result = submission.result
         self.assertEqual(result.score, 46)

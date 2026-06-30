@@ -9,6 +9,8 @@ class OMRUploadForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['participant'].required = False
+        self.fields['participant'].help_text = "Optional. If left blank, the system will automatically read the roll number from the sheet."
         self.fields['participant'].widget.attrs.update({
             'class': 'form-control',
             'id': 'id_participant'

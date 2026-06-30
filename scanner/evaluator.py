@@ -173,10 +173,102 @@ def evaluate_sheet(warped_gray):
         
     return detected_answers
 
+def detect_roll_number(thresh):
+    """
+    Scans the 5-column by 10-row roll number bubble grid on the warped OMR sheet.
+    Returns a 5-digit string, using '?' for columns where detection was unclear.
+    """
+    roll_x_centers = [76, 111, 146, 181, 216]
+    roll_y_centers = [260 + r * 36 for r in range(10)]
+    bubble_r = 10
+    
+    roll_digits = []
+    
+    for col_idx in range(5):
+        cx = roll_x_centers[col_idx]
+        bubble_stats = []
+        
+        for row_idx in range(10):
+            cy = roll_y_centers[row_idx]
+            
+            # Crop bubble region
+            x1 = cx - bubble_r
+            y1 = cy - bubble_r
+            x2 = cx + bubble_r
+            y2 = cy + bubble_r
+            
+            bubble_crop = thresh[y1:y2, x1:x2]
+            
+            # Create circular mask
+            mask = np.zeros(bubble_crop.shape, dtype="uint8")
+            cv2.circle(mask, (bubble_r, bubble_r), bubble_r - 2, 255, -1)
+            
+            # Calculate fill ratio
+            masked_crop = cv2.bitwise_and(bubble_crop, bubble_crop, mask=mask)
+            total_pixels = cv2.countNonZero(mask)
+            if total_pixels == 0:
+                fill_ratio = 0
+            else:
+                filled_pixels = cv2.countNonZero(masked_crop)
+                fill_ratio = float(filled_pixels) / total_pixels
+            
+            bubble_stats.append(fill_ratio)
+            
+        # Find the bubble with the highest fill ratio in this column
+        max_ratio = max(bubble_stats)
+        max_idx = bubble_stats.index(max_ratio)
+        
+        # If the highest fill ratio is above a threshold (e.g. 25%), we consider it filled
+        if max_ratio > 0.25:
+            roll_digits.append(str(max_idx))
+        else:
+            roll_digits.append("?")
+            
+    return "".join(roll_digits)
+
+def detect_exam_set(thresh):
+    """
+    Detects which Exam Set bubble is filled (Set A or Set B).
+    Returns 'SET_A', 'SET_B', or None if unclear.
+    """
+    set_x_centers = [64, 107]
+    cy = 104
+    bubble_r = 10
+    
+    bubble_stats = []
+    for cx in set_x_centers:
+        x1 = cx - bubble_r
+        y1 = cy - bubble_r
+        x2 = cx + bubble_r
+        y2 = cy + bubble_r
+        
+        bubble_crop = thresh[y1:y2, x1:x2]
+        mask = np.zeros(bubble_crop.shape, dtype="uint8")
+        cv2.circle(mask, (bubble_r, bubble_r), bubble_r - 2, 255, -1)
+        
+        masked_crop = cv2.bitwise_and(bubble_crop, bubble_crop, mask=mask)
+        total_pixels = cv2.countNonZero(mask)
+        if total_pixels == 0:
+            fill_ratio = 0
+        else:
+            filled_pixels = cv2.countNonZero(masked_crop)
+            fill_ratio = float(filled_pixels) / total_pixels
+        bubble_stats.append(fill_ratio)
+        
+    # Determine set based on which bubble is filled (> 25%)
+    if bubble_stats[0] > 0.25 and bubble_stats[1] <= 0.25:
+        return 'SET_A'
+    elif bubble_stats[1] > 0.25 and bubble_stats[0] <= 0.25:
+        return 'SET_B'
+    else:
+        return None
+
 def evaluate_and_grade_submission(submission_id):
     """
     Main pipeline to grade a submission within a database transaction.
     """
+    from participants.models import Participant
+    
     with transaction.atomic():
         submission = OMRSubmission.objects.select_for_update().get(pk=submission_id)
         
@@ -196,10 +288,44 @@ def evaluate_and_grade_submission(submission_id):
             # Step 2: Warp perspective
             warped = warp_image(gray, anchors)
             
-            # Step 3: Evaluate bubbles
+            # Step 3: Threshold warped image to get a binary version for bubble evaluation
+            _, thresh = cv2.threshold(warped, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+            
+            # Step 4: Auto-detect roll number if participant is not set
+            if not submission.participant:
+                detected_roll = detect_roll_number(thresh)
+                if "?" in detected_roll:
+                    raise ValueError(f"Could not clearly read the roll number from the sheet. Detected: {detected_roll}")
+                
+                try:
+                    participant = Participant.objects.get(roll_number=detected_roll)
+                except Participant.DoesNotExist:
+                    raise ValueError(f"Detected roll number '{detected_roll}', but no such participant is registered.")
+                
+                # Check if this participant already has a submission
+                if OMRSubmission.objects.filter(participant=participant).exclude(pk=submission.pk).exists():
+                    raise ValueError(f"Participant {participant.full_name} ({detected_roll}) already has an OMR submission.")
+                
+                submission.participant = participant
+            
+            # Step 5: Auto-resolve answer key if not set
+            if not submission.answer_key:
+                try:
+                    answer_key = AnswerKey.objects.get(
+                        group=submission.participant.group,
+                        paper_set=submission.participant.paper_set
+                    )
+                    submission.answer_key = answer_key
+                except AnswerKey.DoesNotExist:
+                    raise ValueError(
+                        f"The Answer Key for '{submission.participant.get_group_display()} - "
+                        f"{submission.participant.get_paper_set_display()}' has not been configured yet."
+                    )
+            
+            # Step 6: Evaluate question bubbles
             detected_answers = evaluate_sheet(warped)
             
-            # Step 4: Compare against answer key
+            # Step 7: Compare against answer key
             answer_key = submission.answer_key
             correct_answers = answer_key.answers
             

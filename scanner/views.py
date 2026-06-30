@@ -17,39 +17,43 @@ class OMRUploadView(LoginRequiredMixin, View):
     def post(self, request):
         form = OMRUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            participant = form.cleaned_data['participant']
-            
-            # Resolve the correct AnswerKey
-            try:
-                answer_key = AnswerKey.objects.get(
-                    group=participant.group,
-                    paper_set=participant.paper_set
-                )
-            except AnswerKey.DoesNotExist:
-                messages.error(
-                    request, 
-                    f"Cannot evaluate sheet: The Answer Key for "
-                    f"'{participant.get_group_display()} - {participant.get_paper_set_display()}' "
-                    f"has not been configured yet."
-                )
-                return render(request, 'scanner/upload.html', {'form': form})
+            participant = form.cleaned_data.get('participant')
             
             # Save the submission
             submission = form.save(commit=False)
-            submission.answer_key = answer_key
+            
+            if participant:
+                # Resolve the correct AnswerKey (manual override)
+                try:
+                    answer_key = AnswerKey.objects.get(
+                        group=participant.group,
+                        paper_set=participant.paper_set
+                    )
+                    submission.answer_key = answer_key
+                except AnswerKey.DoesNotExist:
+                    messages.error(
+                        request, 
+                        f"Cannot evaluate sheet: The Answer Key for "
+                        f"'{participant.get_group_display()} - {participant.get_paper_set_display()}' "
+                        f"has not been configured yet."
+                    )
+                    return render(request, 'scanner/upload.html', {'form': form})
+            
             submission.status = 'PENDING'
             submission.save()
             
-            # Trigger OMR evaluation
+            # Trigger OMR evaluation (which handles auto-detecting roll number and linking)
             success, msg = evaluate_and_grade_submission(submission.pk)
             
             if success:
-                messages.success(request, f"OMR Sheet for {participant.full_name} evaluated successfully!")
-                # Redirect to the result detail view
+                submission.refresh_from_db()
+                messages.success(request, f"OMR Sheet for {submission.participant.full_name} evaluated successfully!")
                 return redirect('results:detail', pk=submission.result.pk)
             else:
                 messages.error(request, f"OMR Evaluation failed: {msg}")
-                # Render the upload page again
+                # Clean up the submission if it failed and has no participant linked
+                if not submission.participant:
+                    submission.delete()
                 return redirect('scanner:upload')
                 
         return render(request, 'scanner/upload.html', {'form': form})
