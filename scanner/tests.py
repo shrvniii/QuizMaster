@@ -47,13 +47,16 @@ class OMRPipelineTestCase(TestCase):
         cv2.rectangle(img, (42, 1142), (58, 1158), (0, 0, 0), -1) # BL
         cv2.rectangle(img, (942, 1142), (958, 1158), (0, 0, 0), -1) # BR
         
-        # Warped coordinates:
-        # col1_x = 225 pt in PDF -> 359, 402, 445, 487
-        col1_x_centers = [359, 402, 445, 487]
-        # col2_x = 410 pt in PDF -> 718, 761, 804, 847
-        col2_x_centers = [718, 761, 804, 847]
-        
-        row_y_centers = [int((660 - get_row_y_coordinate(r)) * 2) for r in range(25)]
+        # Warped coordinates mapping matching scanner/evaluator.py
+        col1_x_centers = [355, 408, 461, 514]
+        col2_x_centers = [738, 791, 845, 898]
+        row_y_centers = [
+            101.0, 140.5, 179.5, 218.5, 258.0, 
+            307.5, 347.5, 387.0, 427.0, 466.0, 
+            515.0, 555.0, 593.5, 635.0, 675.0, 
+            725.0, 765.0, 805.0, 845.0, 884.0, 
+            934.5, 974.0, 1014.0, 1054.0, 1093.5
+        ]
         
         # Define what the student marks:
         # Q1: Marks A (Correct: A) -> Score+1
@@ -76,18 +79,19 @@ class OMRPipelineTestCase(TestCase):
         student_marks[5] = [1, 2] # Q6: A & B (Multi)
         for q in range(6, 50):
             student_marks[q] = [1] # Q7-Q50: A (Correct)
-
+ 
         # Draw Roll No bubbles for "02001" on the mock sheet
         # Digits: [0, 2, 0, 0, 1]
         roll_digits = [0, 2, 0, 0, 1]
-        roll_x_centers = [76, 111, 146, 181, 216]
+        roll_x_centers = [55.5, 92.5, 130.5, 169.5, 206.5]
+        roll_y_centers = [274.5, 313.5, 352.5, 390.5, 430.0, 468.5, 507.5, 546.0, 584.5, 620.5]
         
         for col_idx, digit in enumerate(roll_digits):
             cx = roll_x_centers[col_idx]
             ox = int(50 + cx * 0.9)
             
             for row_idx in range(10):
-                cy = 260 + row_idx * 36
+                cy = roll_y_centers[row_idx]
                 oy = int(50 + cy * (1100.0 / 1200.0))
                 
                 if row_idx == digit:
@@ -224,14 +228,15 @@ class BulkOMRUploadTestCase(TestCase):
         
         # Draw Roll No bubbles for "03001"
         roll_digits = [0, 3, 0, 0, 1]
-        roll_x_centers = [76, 111, 146, 181, 216]
+        roll_x_centers = [55.5, 92.5, 130.5, 169.5, 206.5]
+        roll_y_centers = [274.5, 313.5, 352.5, 390.5, 430.0, 468.5, 507.5, 546.0, 584.5, 620.5]
         
         for col_idx, digit in enumerate(roll_digits):
             cx = roll_x_centers[col_idx]
             ox = int(50 + cx * 0.9)
             
             for row_idx in range(10):
-                cy = 260 + row_idx * 36
+                cy = roll_y_centers[row_idx]
                 oy = int(50 + cy * (1100.0 / 1200.0))
                 
                 if row_idx == digit:
@@ -240,9 +245,15 @@ class BulkOMRUploadTestCase(TestCase):
                     cv2.circle(img, (ox, oy), 8, (0, 0, 0), 1)  # Empty
         
         # Draw question bubbles (all set to A/1)
-        col1_x_centers = [359, 402, 445, 487]
-        col2_x_centers = [718, 761, 804, 847]
-        row_y_centers = [int((660 - get_row_y_coordinate(r)) * 2) for r in range(25)]
+        col1_x_centers = [355, 408, 461, 514]
+        col2_x_centers = [738, 791, 845, 898]
+        row_y_centers = [
+            101.0, 140.5, 179.5, 218.5, 258.0, 
+            307.5, 347.5, 387.0, 427.0, 466.0, 
+            515.0, 555.0, 593.5, 635.0, 675.0, 
+            725.0, 765.0, 805.0, 845.0, 884.0, 
+            934.5, 974.0, 1014.0, 1054.0, 1093.5
+        ]
         
         for q in range(50):
             col = 0 if q < 25 else 1

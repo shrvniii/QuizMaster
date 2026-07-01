@@ -29,12 +29,15 @@ def detect_anchors(img_gray):
             x, y, w, h = cv2.boundingRect(c)
             aspect_ratio = float(w) / h
             
-            if 0.8 <= aspect_ratio <= 1.2:
+            # Loosened aspect ratio for scanned sheets
+            if 0.7 <= aspect_ratio <= 1.3:
                 # Check solidity (squareness)
                 rect_area = w * h
-                solidity = float(area) / rect_area
-                if solidity > 0.8:
-                    # Store center point and the contour
+                solidity = float(area) / rect_area if rect_area > 0 else 0
+                
+                # Loosened solidity threshold (0.4) to support L-shaped bracket crop marks (solidity ~0.55-0.6)
+                if solidity > 0.4:
+                    # Store center point
                     cx = x + w / 2
                     cy = y + h / 2
                     candidates.append((cx, cy))
@@ -103,20 +106,19 @@ def get_row_y_coordinate(r):
     return 590 - (block_idx * 105) - (row_in_block * 18)
 
 def evaluate_sheet(warped_gray):
-    # Coordinates mapping in 1000x1200 space
-    # Left Column (Q1 - Q25) centers (corresponds to col1_x = 225 pt in PDF)
-    # WX = (PX - 40) * 1000 / 515 -> 225, 247, 269, 291 -> 359, 402, 445, 487
-    col1_x_centers = [359, 402, 445, 487]
+    # Updated coordinates mapping in 1000x1200 warped space matching the scanned sheet layout
+    col1_x_centers = [355, 408, 461, 514]
+    col2_x_centers = [738, 791, 845, 898]
     
-    # Right Column (Q26 - Q50) centers (corresponds to col2_x = 410 pt in PDF)
-    # WX = (PX - 40) * 1000 / 515 -> 410, 432, 454, 476 -> 718, 761, 804, 847
-    col2_x_centers = [718, 761, 804, 847]
+    row_y_centers = [
+        101.0, 140.5, 179.5, 218.5, 258.0, 
+        307.5, 347.5, 387.0, 427.0, 466.0, 
+        515.0, 555.0, 593.5, 635.0, 675.0, 
+        725.0, 765.0, 805.0, 845.0, 884.0, 
+        934.5, 974.0, 1014.0, 1054.0, 1093.5
+    ]
     
-    # Y-coordinates in warped pixels (WY = (660 - PY) * 2)
-    row_y_centers = [int((660 - get_row_y_coordinate(r)) * 2) for r in range(25)]
-    
-    bubble_r = 10  # Radius in pixels (slightly smaller to match smaller bubbles)
-    
+    bubble_r = 10  # Radius in pixels
     detected_answers = []
     
     # Apply Otsu's thresholding to get a clean binary image
@@ -128,10 +130,10 @@ def evaluate_sheet(warped_gray):
         
         for idx, cx in enumerate(x_centers):
             # Crop bubble region
-            x1 = cx - bubble_r
-            y1 = y - bubble_r
-            x2 = cx + bubble_r
-            y2 = y + bubble_r
+            x1 = int(cx - bubble_r)
+            y1 = int(y - bubble_r)
+            x2 = int(cx + bubble_r)
+            y2 = int(y + bubble_r)
             
             bubble_crop = thresh[y1:y2, x1:x2]
             
@@ -142,9 +144,11 @@ def evaluate_sheet(warped_gray):
             # Calculate percentage of filled pixels in the mask area
             masked_crop = cv2.bitwise_and(bubble_crop, bubble_crop, mask=mask)
             total_pixels = cv2.countNonZero(mask)
-            filled_pixels = cv2.countNonZero(masked_crop)
-            
-            fill_ratio = float(filled_pixels) / total_pixels
+            if total_pixels == 0:
+                fill_ratio = 0
+            else:
+                filled_pixels = cv2.countNonZero(masked_crop)
+                fill_ratio = float(filled_pixels) / total_pixels
             bubble_stats.append(fill_ratio)
             
         # Determine which bubbles are filled
@@ -157,7 +161,7 @@ def evaluate_sheet(warped_gray):
         elif len(filled_indices) == 0:
             return 0  # Unanswered
         else:
-            return 5  # Multi-marked
+            return 5  # Multi-marked (double-marked)
             
     # Process Q1 - Q25
     for r in range(25):
@@ -178,8 +182,9 @@ def detect_roll_number(thresh):
     Scans the 5-column by 10-row roll number bubble grid on the warped OMR sheet.
     Returns a 5-digit string, using '?' for columns where detection was unclear.
     """
-    roll_x_centers = [76, 111, 146, 181, 216]
-    roll_y_centers = [260 + r * 36 for r in range(10)]
+    # Updated coordinates mapping to the scanned sheet layout
+    roll_x_centers = [55.5, 92.5, 130.5, 169.5, 206.5]
+    roll_y_centers = [274.5, 313.5, 352.5, 390.5, 430.0, 468.5, 507.5, 546.0, 584.5, 620.5]
     bubble_r = 10
     
     roll_digits = []
@@ -192,10 +197,10 @@ def detect_roll_number(thresh):
             cy = roll_y_centers[row_idx]
             
             # Crop bubble region
-            x1 = cx - bubble_r
-            y1 = cy - bubble_r
-            x2 = cx + bubble_r
-            y2 = cy + bubble_r
+            x1 = int(cx - bubble_r)
+            y1 = int(cy - bubble_r)
+            x2 = int(cx + bubble_r)
+            y2 = int(cy + bubble_r)
             
             bubble_crop = thresh[y1:y2, x1:x2]
             
@@ -231,16 +236,17 @@ def detect_exam_set(thresh):
     Detects which Exam Set bubble is filled (Set A or Set B).
     Returns 'SET_A', 'SET_B', or None if unclear.
     """
-    set_x_centers = [64, 107]
-    cy = 104
+    # Updated coordinates for the Exam Set bubbles in the scanned layout
+    set_x_centers = [67, 126]
+    cy = 83.0
     bubble_r = 10
     
     bubble_stats = []
     for cx in set_x_centers:
-        x1 = cx - bubble_r
-        y1 = cy - bubble_r
-        x2 = cx + bubble_r
-        y2 = cy + bubble_r
+        x1 = int(cx - bubble_r)
+        y1 = int(cy - bubble_r)
+        x2 = int(cx + bubble_r)
+        y2 = int(cy + bubble_r)
         
         bubble_crop = thresh[y1:y2, x1:x2]
         mask = np.zeros(bubble_crop.shape, dtype="uint8")
@@ -294,17 +300,42 @@ def evaluate_and_grade_submission(submission_id):
             # Step 4: Auto-detect roll number if participant is not set
             if not submission.participant:
                 detected_roll = detect_roll_number(thresh)
+                
+                # Check if it was only partially bubbled (contains '?')
                 if "?" in detected_roll:
-                    raise ValueError(f"Could not clearly read the roll number from the sheet. Detected: {detected_roll}")
-                
-                try:
-                    participant = Participant.objects.get(roll_number=detected_roll)
-                except Participant.DoesNotExist:
-                    raise ValueError(f"Detected roll number '{detected_roll}', but no such participant is registered.")
-                
-                # Check if this participant already has a submission
-                if OMRSubmission.objects.filter(participant=participant).exclude(pk=submission.pk).exists():
-                    raise ValueError(f"Participant {participant.full_name} ({detected_roll}) already has an OMR submission.")
+                    # Try to resolve it if there is a unique candidate matching the filled prefix
+                    prefix = detected_roll.replace("?", "")
+                    if len(prefix) >= 2:  # Must have at least the 2-digit school code prefix
+                        matches = Participant.objects.filter(roll_number__startswith=prefix)
+                        
+                        # Exclude candidates who already have an OMR submission
+                        available_matches = []
+                        for p in matches:
+                            if not OMRSubmission.objects.filter(participant=p).exclude(pk=submission.pk).exists():
+                                available_matches.append(p)
+                                
+                        if len(available_matches) == 1:
+                            participant = available_matches[0]
+                            # Soft fallback log
+                            import logging
+                            logger = logging.getLogger(__name__)
+                            logger.info(f"OMR Roll No partially bubbled as '{detected_roll}'. Unique match resolved to: {participant.full_name} ({participant.roll_number})")
+                        else:
+                            raise ValueError(
+                                f"Could not clearly read the roll number from the sheet. Detected '{detected_roll}'. "
+                                f"Found {len(available_matches)} potential candidate matches in the database."
+                            )
+                    else:
+                        raise ValueError(f"Could not clearly read the roll number from the sheet. Detected: {detected_roll}")
+                else:
+                    try:
+                        participant = Participant.objects.get(roll_number=detected_roll)
+                    except Participant.DoesNotExist:
+                        raise ValueError(f"Detected roll number '{detected_roll}', but no such participant is registered.")
+                    
+                    # Check if this participant already has a submission
+                    if OMRSubmission.objects.filter(participant=participant).exclude(pk=submission.pk).exists():
+                        raise ValueError(f"Participant {participant.full_name} ({detected_roll}) already has an OMR submission.")
                 
                 submission.participant = participant
             
