@@ -106,17 +106,10 @@ def get_row_y_coordinate(r):
     return 590 - (block_idx * 105) - (row_in_block * 18)
 
 def evaluate_sheet(warped_gray):
-    # Updated coordinates mapping in 1000x1200 warped space matching the scanned sheet layout
-    col1_x_centers = [355, 408, 461, 514]
-    col2_x_centers = [738, 791, 845, 898]
-    
-    row_y_centers = [
-        101.0, 140.5, 179.5, 218.5, 258.0, 
-        307.5, 347.5, 387.0, 427.0, 466.0, 
-        515.0, 555.0, 593.5, 635.0, 675.0, 
-        725.0, 765.0, 805.0, 845.0, 884.0, 
-        934.5, 974.0, 1014.0, 1054.0, 1093.5
-    ]
+    # Restored to theoretical PDF coordinates mapping in 1000x1200 warped space
+    col1_x_centers = [359, 402, 445, 487]
+    col2_x_centers = [718, 761, 804, 847]
+    row_y_centers = [int((660 - get_row_y_coordinate(r)) * 2) for r in range(25)]
     
     bubble_r = 10  # Radius in pixels
     detected_answers = []
@@ -152,8 +145,8 @@ def evaluate_sheet(warped_gray):
             bubble_stats.append(fill_ratio)
             
         # Determine which bubbles are filled
-        # Threshold for a filled bubble: > 30% fill ratio
-        fill_threshold = 0.30
+        # Threshold adjusted to 0.60 to distinguish empty bubbles with letters/borders (0.3-0.45) from filled bubbles (~0.85-1.0)
+        fill_threshold = 0.60
         filled_indices = [i + 1 for i, ratio in enumerate(bubble_stats) if ratio > fill_threshold]
         
         if len(filled_indices) == 1:
@@ -182,12 +175,13 @@ def detect_roll_number(thresh):
     Scans the 5-column by 10-row roll number bubble grid on the warped OMR sheet.
     Returns a 5-digit string, using '?' for columns where detection was unclear.
     """
-    # Updated coordinates mapping to the scanned sheet layout
-    roll_x_centers = [55.5, 92.5, 130.5, 169.5, 206.5]
-    roll_y_centers = [274.5, 313.5, 352.5, 390.5, 430.0, 468.5, 507.5, 546.0, 584.5, 620.5]
+    # Restored to theoretical PDF coordinates mapping
+    roll_x_centers = [76, 111, 146, 181, 216]
+    roll_y_centers = [260 + r * 36 for r in range(10)]
     bubble_r = 10
     
     roll_digits = []
+    fill_threshold = 0.60
     
     for col_idx in range(5):
         cx = roll_x_centers[col_idx]
@@ -223,8 +217,8 @@ def detect_roll_number(thresh):
         max_ratio = max(bubble_stats)
         max_idx = bubble_stats.index(max_ratio)
         
-        # If the highest fill ratio is above a threshold (e.g. 25%), we consider it filled
-        if max_ratio > 0.25:
+        # Using increased threshold (0.60) to avoid false positives on border lines
+        if max_ratio > fill_threshold:
             roll_digits.append(str(max_idx))
         else:
             roll_digits.append("?")
@@ -236,10 +230,11 @@ def detect_exam_set(thresh):
     Detects which Exam Set bubble is filled (Set A or Set B).
     Returns 'SET_A', 'SET_B', or None if unclear.
     """
-    # Updated coordinates for the Exam Set bubbles in the scanned layout
-    set_x_centers = [67, 126]
-    cy = 83.0
+    # Restored to theoretical PDF coordinates mapping
+    set_x_centers = [64, 107]
+    cy = 104
     bubble_r = 10
+    fill_threshold = 0.60
     
     bubble_stats = []
     for cx in set_x_centers:
@@ -261,10 +256,10 @@ def detect_exam_set(thresh):
             fill_ratio = float(filled_pixels) / total_pixels
         bubble_stats.append(fill_ratio)
         
-    # Determine set based on which bubble is filled (> 25%)
-    if bubble_stats[0] > 0.25 and bubble_stats[1] <= 0.25:
+    # Determine set based on which bubble is filled (> 60%)
+    if bubble_stats[0] > fill_threshold and bubble_stats[1] <= fill_threshold:
         return 'SET_A'
-    elif bubble_stats[1] > 0.25 and bubble_stats[0] <= 0.25:
+    elif bubble_stats[1] > fill_threshold and bubble_stats[0] <= fill_threshold:
         return 'SET_B'
     else:
         return None
