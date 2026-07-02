@@ -328,7 +328,31 @@ def evaluate_and_grade_submission(submission_id):
                     try:
                         participant = Participant.objects.get(roll_number=detected_roll)
                     except Participant.DoesNotExist:
-                        raise ValueError(f"Detected roll number '{detected_roll}', but no such participant is registered.")
+                        # Automatically create a placeholder participant
+                        from schools.models import School
+                        school_code = detected_roll[:2]
+                        school = School.objects.filter(code=school_code).first()
+                        if not school:
+                            school = School.objects.create(
+                                name=f"School (Code: {school_code})",
+                                code=school_code
+                            )
+                        
+                        detected_set = detect_exam_set(thresh) or 'SET_A'
+                        
+                        # Guess the group based on configured Answer Keys
+                        group = 'JUNIOR'
+                        matching_keys = AnswerKey.objects.filter(paper_set=detected_set)
+                        if matching_keys.count() == 1:
+                            group = matching_keys.first().group
+                            
+                        participant = Participant.objects.create(
+                            roll_number=detected_roll,
+                            full_name=f"Unregistered Student (Roll {detected_roll})",
+                            school=school,
+                            group=group,
+                            paper_set=detected_set
+                        )
                     
                     # Check if this participant already has a submission
                     if OMRSubmission.objects.filter(participant=participant).exclude(pk=submission.pk).exists():
