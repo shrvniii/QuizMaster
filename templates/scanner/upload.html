@@ -51,12 +51,31 @@
                     </span>
                 </div>
                 
+                <div id="camera-error-alert" class="alert alert-danger" style="display: none; align-items: flex-start;">
+                    <i class="bi bi-exclamation-triangle-fill" style="margin-top: 2px;"></i>
+                    <span id="camera-error-message"></span>
+                </div>
+
                 <div class="form-group">
                     <label for="id_image" class="form-label required">OMR Sheet Image</label>
                     {{ form.image }}
                     <span style="font-size: 12px; color: var(--text-muted); margin-top: 4px; display: block;">
                         Upload a high-quality scan or photo (JPEG, JPG, or PNG). Max file size: 10 MB.
                     </span>
+                    
+                    <!-- Scan Using Camera Option -->
+                    <div id="camera-scan-option-container" style="display: none; margin-top: 16px;">
+                        <div style="display: flex; align-items: center; text-align: center; margin: 16px 0; color: var(--text-muted); font-size: 13px; font-weight: 500;">
+                            <hr style="flex-grow: 1; border: none; border-top: 1px solid var(--border-color); margin-right: 12px;">
+                            <span>OR</span>
+                            <hr style="flex-grow: 1; border: none; border-top: 1px solid var(--border-color); margin-left: 12px;">
+                        </div>
+                        
+                        <button type="button" id="start-camera-btn" class="btn btn-secondary" style="width: 100%; border: 1px solid var(--accent-color); color: var(--accent-color); font-weight: 600; justify-content: center; gap: 8px;">
+                            <i class="bi bi-camera-fill"></i>
+                            <span>Scan Using Camera</span>
+                        </button>
+                    </div>
                 </div>
                 
                 <div style="margin-top: 32px; border-top: 1px solid var(--border-color); padding-top: 20px; display: flex; justify-content: flex-end;">
@@ -228,6 +247,70 @@
         </div>
     </div>
 </div>
+
+<!-- Camera Scanner Fullscreen Overlay -->
+<div id="camera-scanner-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #000000; z-index: 10000; flex-direction: column; overflow: hidden; font-family: 'Inter', sans-serif; color: #ffffff;">
+    <video id="scanner-video" autoplay playsinline style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></video>
+    
+    <svg id="scanner-guide-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none;">
+        <path id="guide-mask" fill="rgba(0,0,0,0.5)" fill-rule="evenodd" d="" />
+        <path id="guide-corners" stroke="#FFFFFF" stroke-width="4" fill="none" d="" />
+        <circle id="level-outer" cx="50%" cy="50%" r="24" stroke="rgba(255,255,255,0.4)" stroke-width="2" fill="none" />
+        <circle id="level-inner" cx="50%" cy="50%" r="8" fill="rgba(255,255,255,0.7)" style="transition: transform 0.05s ease-out; transform-origin: center;" />
+    </svg>
+    
+    <div class="scanner-header">
+        <button type="button" id="close-scanner-btn" style="background: rgba(255, 255, 255, 0.15); border: none; border-radius: 50%; width: 40px; height: 40px; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; backdrop-filter: blur(5px); transition: background-color 0.2s;">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div style="text-align: center; flex-grow: 1; padding: 0 16px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 600; text-shadow: 0 1px 3px rgba(0,0,0,0.8); color: white;">Align OMR Sheet</h3>
+            <span id="scanner-instruction" style="font-size: 11px; color: rgba(255, 255, 255, 0.8); display: block; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">Position sheet inside the guide</span>
+        </div>
+        <div id="level-status-icon" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: 50%; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(5px); color: #94A3B8;">
+            <i class="bi bi-phone-vibrate-fill" style="transform: rotate(90deg);"></i>
+        </div>
+    </div>
+    
+    <div class="scanner-controls">
+        <button type="button" id="torch-toggle-btn" class="control-btn" style="display: none; background: rgba(255, 255, 255, 0.15); border: none; border-radius: 50%; width: 48px; height: 48px; color: #ffffff; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; backdrop-filter: blur(5px);">
+            <i class="bi bi-lightning-fill"></i>
+        </button>
+        <button type="button" id="capture-photo-btn" class="control-btn" style="background: none; border: 4px solid #ffffff; border-radius: 50%; width: 72px; height: 72px; padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s ease;">
+            <div style="background-color: #ffffff; border-radius: 50%; width: 100%; height: 100%;"></div>
+        </button>
+        <button type="button" id="switch-camera-btn" class="control-btn" style="display: none; background: rgba(255, 255, 255, 0.15); border: none; border-radius: 50%; width: 48px; height: 48px; color: #ffffff; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; backdrop-filter: blur(5px);">
+            <i class="bi bi-camera-rotate-fill"></i>
+        </button>
+    </div>
+    
+    <div id="scanner-preview-container" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #000000; z-index: 4; flex-direction: column; justify-content: space-between;">
+        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 20px;">
+            <img id="preview-img" style="max-width: 100%; max-height: 80vh; border-radius: 8px; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 4px 20px rgba(0,0,0,0.8); object-fit: contain;">
+        </div>
+        <div class="scanner-controls" style="background: rgba(0,0,0,0.95); border-top: 1px solid rgba(255,255,255,0.1); padding: 24px 20px 40px 20px;">
+            <button type="button" id="retake-photo-btn" class="btn btn-secondary" style="background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2); padding: 12px 24px; border-radius: 30px; font-weight: 600; width: 40%; justify-content: center; gap: 8px;">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <span>Retake</span>
+            </button>
+            <button type="button" id="confirm-upload-btn" class="btn btn-primary" style="background: linear-gradient(135deg, var(--accent-color) 0%, #1976D2 100%); border: none; padding: 12px 24px; border-radius: 30px; font-weight: 600; width: 50%; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(21, 101, 192, 0.4);">
+                <i class="bi bi-cloud-arrow-up-fill"></i>
+                <span>Confirm</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Evaluation/Upload loading overlay -->
+<div id="evaluation-loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(13, 43, 78, 0.95); z-index: 20000; flex-direction: column; align-items: center; justify-content: center; color: #ffffff; font-family: 'Inter', sans-serif;">
+    <div class="spinner-container" style="position: relative; width: 80px; height: 80px; margin-bottom: 24px;">
+        <div style="box-sizing: border-box; display: block; position: absolute; width: 80px; height: 80px; border: 6px solid rgba(255,255,255,0.1); border-radius: 50%;"></div>
+        <div style="box-sizing: border-box; display: block; position: absolute; width: 80px; height: 80px; border: 6px solid transparent; border-top-color: #ffffff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <i class="bi bi-camera-fill" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 28px; color: #ffffff;"></i>
+    </div>
+    <h3 style="margin-bottom: 8px; font-weight: 700; letter-spacing: 0.5px; color: white;">Evaluating OMR Sheet</h3>
+    <p style="font-size: 13px; color: rgba(255,255,255,0.7); max-width: 280px; text-align: center; line-height: 1.5; margin: 0;">This will take a moment. The system is reading registration marks and grading the bubbles...</p>
+</div>
 {% endblock %}
 
 {% block extra_css %}
@@ -253,6 +336,84 @@
 .tab-btn.active {
     color: var(--accent-color) !important;
     border-bottom-color: var(--accent-color) !important;
+}
+
+/* Camera scan styling */
+#camera-scanner-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #000000;
+    z-index: 10000;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    color: #ffffff;
+}
+
+.scanner-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 16px 20px;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.scanner-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 24px 20px 40px 20px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+    z-index: 3;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.control-btn {
+    transition: transform 0.2s, background-color 0.2s;
+}
+.control-btn:active {
+    transform: scale(0.9);
+}
+
+#camera-scan-option-container {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .has-camera #camera-scan-option-container {
+        display: block;
+    }
+}
+
+/* Guide box pulsing animation when level is achieved */
+@keyframes level-pulse {
+    0% { opacity: 0.8; }
+    50% { opacity: 1; stroke-width: 5px; }
+    100% { opacity: 0.8; }
+}
+
+#guide-corners {
+    transition: stroke 0.3s, filter 0.3s;
+}
+
+.level-perfect #guide-corners {
+    animation: level-pulse 1.5s infinite;
+}
+
+#level-inner {
+    transform-origin: center;
 }
 </style>
 {% endblock %}
@@ -551,6 +712,388 @@ document.addEventListener('DOMContentLoaded', function() {
             clearSelectedFile();
             bulkInitialView.style.display = 'block';
             bulkCompleteView.style.display = 'none';
+        });
+    }
+
+    // Form submit loader logic
+    const singleForm = document.querySelector('#single-upload-content form');
+    if (singleForm) {
+        singleForm.addEventListener('submit', function() {
+            document.getElementById('evaluation-loading-overlay').style.display = 'flex';
+        });
+    }
+
+    // Camera scanner elements
+    const startCameraBtn = document.getElementById('start-camera-btn');
+    const closeScannerBtn = document.getElementById('close-scanner-btn');
+    const capturePhotoBtn = document.getElementById('capture-photo-btn');
+    const torchToggleBtn = document.getElementById('torch-toggle-btn');
+    const switchCameraBtn = document.getElementById('switch-camera-btn');
+    const retakePhotoBtn = document.getElementById('retake-photo-btn');
+    const confirmUploadBtn = document.getElementById('confirm-upload-btn');
+    
+    const cameraOverlay = document.getElementById('camera-scanner-overlay');
+    const previewContainer = document.getElementById('scanner-preview-container');
+    const video = document.getElementById('scanner-video');
+    const previewImg = document.getElementById('preview-img');
+    const levelStatus = document.getElementById('level-status-icon');
+    const levelOuter = document.getElementById('level-outer');
+    const levelInner = document.getElementById('level-inner');
+    const instruction = document.getElementById('scanner-instruction');
+    const guideCorners = document.getElementById('guide-corners');
+    
+    let currentStream = null;
+    let activeDeviceId = null;
+    let videoDevices = [];
+    let torchActive = false;
+    let guideRect = { x: 0, y: 0, w: 0, h: 0 };
+
+    // Check camera support & display button on mobile
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        document.documentElement.classList.add('has-camera');
+        if (window.innerWidth <= 768) {
+            const container = document.getElementById('camera-scan-option-container');
+            if (container) container.style.display = 'block';
+        }
+    }
+
+    if (startCameraBtn) {
+        startCameraBtn.addEventListener('click', function() {
+            const errorAlert = document.getElementById('camera-error-alert');
+            if (errorAlert) errorAlert.style.display = 'none';
+            
+            cameraOverlay.style.display = 'flex';
+            requestOrientationPermission();
+            startCamera();
+        });
+    }
+
+    function requestOrientationPermission() {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission()
+                .then(permissionState => {
+                    if (permissionState === 'granted') {
+                        window.addEventListener('deviceorientation', handleOrientation);
+                    }
+                })
+                .catch(err => {
+                    console.error("Orientation API permission failed:", err);
+                });
+        } else {
+            window.addEventListener('deviceorientation', handleOrientation);
+        }
+    }
+
+    function startCamera(deviceId) {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+        }
+        
+        torchActive = false;
+        
+        const constraints = {
+            video: {
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            },
+            audio: false
+        };
+        
+        if (deviceId) {
+            constraints.video.deviceId = { exact: deviceId };
+        } else {
+            constraints.video.facingMode = { ideal: "environment" };
+        }
+        
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function(stream) {
+                currentStream = stream;
+                video.srcObject = stream;
+                
+                const activeTrack = stream.getVideoTracks()[0];
+                setTimeout(() => {
+                    if (!currentStream) return;
+                    let hasTorch = false;
+                    try {
+                        if (activeTrack.getCapabilities) {
+                            const caps = activeTrack.getCapabilities();
+                            if (caps.torch) hasTorch = true;
+                        }
+                    } catch (e) {
+                        console.log("Capabilities check failed", e);
+                    }
+                    
+                    if (hasTorch) {
+                        torchToggleBtn.style.display = 'flex';
+                        torchToggleBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                        torchToggleBtn.innerHTML = '<i class="bi bi-lightning-fill"></i>';
+                    } else {
+                        torchToggleBtn.style.display = 'none';
+                    }
+                }, 500);
+                
+                return navigator.mediaDevices.enumerateDevices();
+            })
+            .then(function(devices) {
+                videoDevices = devices.filter(d => d.kind === 'videoinput');
+                if (videoDevices.length > 1) {
+                    switchCameraBtn.style.display = 'flex';
+                } else {
+                    switchCameraBtn.style.display = 'none';
+                }
+                
+                if (currentStream) {
+                    const activeTrack = currentStream.getVideoTracks()[0];
+                    const settings = activeTrack.getSettings ? activeTrack.getSettings() : {};
+                    if (settings.deviceId) {
+                        activeDeviceId = settings.deviceId;
+                    }
+                }
+                
+                resizeGuide();
+            })
+            .catch(function(err) {
+                console.error("Camera access failed:", err);
+                cameraOverlay.style.display = 'none';
+                showCameraErrorMsg(err);
+            });
+    }
+
+    function showCameraErrorMsg(error) {
+        let msg = "Could not access camera. ";
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+            msg += "Camera permission was denied. Please allow camera access in your browser settings to scan OMR sheets, or upload an image file instead.";
+        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+            msg += "No camera found on this device. Please use the image upload option.";
+        } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+            msg += "The camera is currently in use by another application. Please close other camera apps and try again.";
+        } else {
+            msg += error.message || "An unknown camera initialization error occurred.";
+        }
+        
+        const errorAlert = document.getElementById('camera-error-alert');
+        const errorMessage = document.getElementById('camera-error-message');
+        if (errorAlert && errorMessage) {
+            errorMessage.textContent = msg;
+            errorAlert.style.display = 'flex';
+            errorAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            alert(msg);
+        }
+    }
+
+    function closeScanner() {
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+        window.removeEventListener('deviceorientation', handleOrientation);
+        cameraOverlay.style.display = 'none';
+        previewContainer.style.display = 'none';
+    }
+
+    if (closeScannerBtn) {
+        closeScannerBtn.addEventListener('click', closeScanner);
+    }
+
+    if (retakePhotoBtn) {
+        retakePhotoBtn.addEventListener('click', function() {
+            previewContainer.style.display = 'none';
+            startCamera(activeDeviceId);
+        });
+    }
+
+    if (torchToggleBtn) {
+        torchToggleBtn.addEventListener('click', function() {
+            if (!currentStream) return;
+            const track = currentStream.getVideoTracks()[0];
+            try {
+                const caps = track.getCapabilities ? track.getCapabilities() : {};
+                if (caps.torch) {
+                    torchActive = !torchActive;
+                    track.applyConstraints({
+                        advanced: [{ torch: torchActive }]
+                    }).then(() => {
+                        if (torchActive) {
+                            torchToggleBtn.style.backgroundColor = 'var(--warning-color)';
+                            torchToggleBtn.innerHTML = '<i class="bi bi-lightning-slash-fill"></i>';
+                        } else {
+                            torchToggleBtn.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                            torchToggleBtn.innerHTML = '<i class="bi bi-lightning-fill"></i>';
+                        }
+                    }).catch(e => console.error("Torch apply failed", e));
+                }
+            } catch (e) {
+                console.error("Torch toggle failed", e);
+            }
+        });
+    }
+
+    if (switchCameraBtn) {
+        switchCameraBtn.addEventListener('click', function() {
+            if (videoDevices.length <= 1) return;
+            let currentIndex = videoDevices.findIndex(d => d.deviceId === activeDeviceId);
+            let nextIndex = (currentIndex + 1) % videoDevices.length;
+            let nextDevice = videoDevices[nextIndex];
+            startCamera(nextDevice.deviceId);
+        });
+    }
+
+    function resizeGuide() {
+        const W = cameraOverlay.clientWidth;
+        const H = cameraOverlay.clientHeight;
+        if (W === 0 || H === 0) return;
+        
+        let w = W * 0.85;
+        let h = w * 1.2;
+        
+        if (h > H * 0.65) {
+            h = H * 0.65;
+            w = h / 1.2;
+        }
+        
+        const x = (W - w) / 2;
+        const y = (H - h) / 2;
+        
+        guideRect = { x, y, w, h };
+        
+        const maskPath = `M 0 0 h ${W} v ${H} h -${W} Z M ${x} ${y} h ${w} v ${h} h -${w} Z`;
+        document.getElementById('guide-mask').setAttribute('d', maskPath);
+        
+        const bracketLen = 24;
+        const cornersPath = `
+            M ${x + bracketLen} ${y} L ${x} ${y} L ${x} ${y + bracketLen}
+            M ${x + w - bracketLen} ${y} L ${x + w} ${y} L ${x + w} ${y + bracketLen}
+            M ${x} ${y + h - bracketLen} L ${x} ${y + h} L ${x + bracketLen} ${y + h}
+            M ${x + w - bracketLen} ${y + h} L ${x + w} ${y + h} L ${x + w} ${y + h - bracketLen}
+        `;
+        document.getElementById('guide-corners').setAttribute('d', cornersPath);
+        
+        levelOuter.setAttribute('cx', W / 2);
+        levelOuter.setAttribute('cy', H / 2);
+        levelInner.setAttribute('cx', W / 2);
+        levelInner.setAttribute('cy', H / 2);
+    }
+
+    window.addEventListener('resize', function() {
+        if (cameraOverlay.style.display === 'flex') {
+            resizeGuide();
+        }
+    });
+
+    video.addEventListener('playing', resizeGuide);
+
+    function handleOrientation(event) {
+        let beta = event.beta;
+        let gamma = event.gamma;
+        if (beta === null || gamma === null) return;
+        
+        const maxTilt = 15;
+        let tiltX = Math.max(-maxTilt, Math.min(maxTilt, gamma));
+        let tiltY = Math.max(-maxTilt, Math.min(maxTilt, beta));
+        
+        const maxOffset = 24;
+        const offsetX = (tiltX / maxTilt) * maxOffset;
+        const offsetY = (tiltY / maxTilt) * maxOffset;
+        
+        levelInner.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+        
+        const tolerance = 3.0;
+        const isLevel = Math.abs(gamma) < tolerance && Math.abs(beta) < tolerance;
+        
+        if (isLevel) {
+            cameraOverlay.classList.add('level-perfect');
+            levelOuter.setAttribute('stroke', '#10B981');
+            levelInner.setAttribute('fill', '#10B981');
+            guideCorners.setAttribute('stroke', '#10B981');
+            guideCorners.style.filter = 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.8))';
+            instruction.textContent = "Level! Capture photo now.";
+            instruction.style.color = '#10B981';
+            levelStatus.style.color = '#10B981';
+            levelStatus.innerHTML = '<i class="bi bi-phone-fill"></i>';
+        } else {
+            cameraOverlay.classList.remove('level-perfect');
+            levelOuter.setAttribute('stroke', 'rgba(255, 255, 255, 0.4)');
+            levelInner.setAttribute('fill', 'rgba(255, 255, 255, 0.7)');
+            guideCorners.setAttribute('stroke', '#FFFFFF');
+            guideCorners.style.filter = 'none';
+            instruction.textContent = "Keep phone flat parallel to table";
+            instruction.style.color = 'rgba(255, 255, 255, 0.8)';
+            levelStatus.style.color = '#94A3B8';
+            levelStatus.innerHTML = '<i class="bi bi-phone-vibrate-fill" style="transform: rotate(90deg);"></i>';
+        }
+    }
+
+    if (capturePhotoBtn) {
+        capturePhotoBtn.addEventListener('click', function() {
+            if (!currentStream || video.paused || video.ended) return;
+            
+            const vW = video.videoWidth;
+            const vH = video.videoHeight;
+            
+            const W_view = cameraOverlay.clientWidth;
+            const H_view = cameraOverlay.clientHeight;
+            
+            const scale = Math.max(W_view / vW, H_view / vH);
+            const w_rendered = vW * scale;
+            const h_rendered = vH * scale;
+            
+            const dx = (W_view - w_rendered) / 2;
+            const dy = (H_view - h_rendered) / 2;
+            
+            const sx = (guideRect.x - dx) / scale;
+            const sy = (guideRect.y - dy) / scale;
+            const sWidth = guideRect.w / scale;
+            const sHeight = guideRect.h / scale;
+            
+            const targetW = 1350;
+            const targetH = 1620;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = targetW;
+            canvas.height = targetH;
+            
+            const ctx = canvas.getContext('2d');
+            if (ctx.filter !== undefined) {
+                ctx.filter = 'contrast(1.15) brightness(1.05)';
+            }
+            
+            ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, targetW, targetH);
+            
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            
+            previewImg.src = canvas.toDataURL('image/jpeg', 0.85);
+            window.capturedCanvas = canvas;
+            
+            previewContainer.style.display = 'flex';
+        });
+    }
+
+    if (confirmUploadBtn) {
+        confirmUploadBtn.addEventListener('click', function() {
+            if (!window.capturedCanvas) return;
+            
+            closeScanner();
+            
+            window.capturedCanvas.toBlob(function(blob) {
+                const file = new File([blob], "captured_omr.jpg", { type: "image/jpeg" });
+                
+                const fileInput = document.querySelector('#single-upload-content input[type="file"]');
+                if (fileInput) {
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    fileInput.files = dataTransfer.files;
+                    
+                    const form = fileInput.closest('form');
+                    if (form) {
+                        document.getElementById('evaluation-loading-overlay').style.display = 'flex';
+                        form.submit();
+                    }
+                }
+            }, 'image/jpeg', 0.85);
         });
     }
 });
