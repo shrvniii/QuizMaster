@@ -75,7 +75,6 @@
         <thead>
             <tr>
                 <th>Roll Number</th>
-                <th>Student Name</th>
                 <th>School</th>
                 <th>Group</th>
                 <th>Paper Set</th>
@@ -87,7 +86,6 @@
             {% for participant in participants %}
                 <tr>
                     <td class="table-mono" style="font-weight: 600;">{{ participant.roll_number }}</td>
-                    <td style="font-weight: 500;">{{ participant.student_name|default:"—" }}</td>
                     <td>{{ participant.school.name }}</td>
                     <td><span class="badge badge-info">{{ participant.get_group_display }}</span></td>
                     <td><span class="badge badge-info">{{ participant.get_paper_set_display }}</span></td>
@@ -127,7 +125,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
                         <i class="bi bi-people" style="font-size: 32px; display: block; margin-bottom: 10px;"></i>
                         No participants found matching the criteria.
                     </td>
