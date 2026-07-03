@@ -150,23 +150,34 @@
         <table style="width: 100%; border-collapse: collapse;">
             <thead>
                 <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
-                    <th style="padding: 10px; width: 200px; position: sticky; top: 0; background: #F8FAFC; z-index: 10;">School Code</th>
-                    <th style="padding: 10px; text-align: right; position: sticky; top: 0; background: #F8FAFC; z-index: 10;">Downloads (Pre-filled & Bubbled)</th>
+                    <th style="padding: 10px; width: 140px; position: sticky; top: 0; background: #F8FAFC; z-index: 10;">School Code</th>
+                    <th style="padding: 10px; position: sticky; top: 0; background: #F8FAFC; z-index: 10;">Junior Batches (001-499)</th>
+                    <th style="padding: 10px; position: sticky; top: 0; background: #F8FAFC; z-index: 10;">Senior Batches (500-999)</th>
                 </tr>
             </thead>
             <tbody>
                 {% for code in school_codes %}
                     <tr style="border-bottom: 1px solid var(--border-color);">
                         <td class="table-mono" style="font-weight: 700; padding: 12px 10px; color: var(--primary-color);">
-                            School Code {{ code }}
+                            School {{ code }}
                         </td>
-                        <td style="text-align: right; padding: 12px 10px;">
-                            <a href="{% url 'reports:download_pregenerated_omr' code 'junior' %}" class="btn btn-primary btn-sm" style="background-color: #EC4899; color: white; border: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; margin-right: 8px;">
-                                <i class="bi bi-download"></i> Junior Pack (001-499)
-                            </a>
-                            <a href="{% url 'reports:download_pregenerated_omr' code 'senior' %}" class="btn btn-primary btn-sm" style="background-color: var(--accent-color); color: white; border: none; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px;">
-                                <i class="bi bi-download"></i> Senior Pack (500-999)
-                            </a>
+                        <td style="padding: 12px 10px;">
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <a href="{% url 'reports:download_pregenerated_omr' code 'junior' 1 100 %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; border-color: #EC4899; color: #EC4899; font-weight: 500;" title="Download Junior 001-100">001-100</a>
+                                <a href="{% url 'reports:download_pregenerated_omr' code 'junior' 101 200 %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; border-color: #EC4899; color: #EC4899; font-weight: 500;" title="Download Junior 101-200">101-200</a>
+                                <a href="{% url 'reports:download_pregenerated_omr' code 'junior' 201 300 %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; border-color: #EC4899; color: #EC4899; font-weight: 500;" title="Download Junior 201-300">201-300</a>
+                                <a href="{% url 'reports:download_pregenerated_omr' code 'junior' 301 400 %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; border-color: #EC4899; color: #EC4899; font-weight: 500;" title="Download Junior 301-400">301-400</a>
+                                <a href="{% url 'reports:download_pregenerated_omr' code 'junior' 401 499 %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; border-color: #EC4899; color: #EC4899; font-weight: 500;" title="Download Junior 401-499">401-499</a>
+                            </div>
+                        </td>
+                        <td style="padding: 12px 10px;">
+                            <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                <a href="{% url 'reports:download_pregenerated_omr' code 'senior' 500 599 %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; border-color: var(--accent-color); color: var(--accent-color); font-weight: 500;" title="Download Senior 500-599">500-599</a>
+                                <a href="{% url 'reports:download_pregenerated_omr' code 'senior' 600 699 %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; border-color: var(--accent-color); color: var(--accent-color); font-weight: 500;" title="Download Senior 600-699">600-699</a>
+                                <a href="{% url 'reports:download_pregenerated_omr' code 'senior' 700 799 %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; border-color: var(--accent-color); color: var(--accent-color); font-weight: 500;" title="Download Senior 700-799">700-799</a>
+                                <a href="{% url 'reports:download_pregenerated_omr' code 'senior' 800 899 %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; border-color: var(--accent-color); color: var(--accent-color); font-weight: 500;" title="Download Senior 800-899">800-899</a>
+                                <a href="{% url 'reports:download_pregenerated_omr' code 'senior' 900 999 %}" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 4px 8px; border-color: var(--accent-color); color: var(--accent-color); font-weight: 500;" title="Download Senior 900-999">900-999</a>
+                            </div>
                         </td>
                     </tr>
                 {% endfor %}

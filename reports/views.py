@@ -174,7 +174,7 @@ class SchoolOMRSheetsDownloadView(LoginRequiredMixin, View):
 
 
 class PregeneratedOMRDownloadView(LoginRequiredMixin, View):
-    def get(self, request, school_code, group):
+    def get(self, request, school_code, group, start, end):
         # Validate school code is a 2-digit numeric code between 01 and 50
         if not school_code.isdigit() or len(school_code) != 2:
             raise Http404("Invalid school code format. Must be a 2-digit number.")
@@ -187,16 +187,20 @@ class PregeneratedOMRDownloadView(LoginRequiredMixin, View):
         if group_upper not in ['JUNIOR', 'SENIOR']:
             raise Http404("Group must be either JUNIOR or SENIOR.")
             
-        # Determine ranges: Junior 1 to 499, Senior 500 to 999
+        # Validate ranges
         if group_upper == 'JUNIOR':
-            start_num = 1
-            end_num = 499
+            if not (1 <= start <= end <= 499):
+                raise Http404("Invalid Junior range. Must be within 001 and 499.")
         else:
-            start_num = 500
-            end_num = 999
+            if not (500 <= start <= end <= 999):
+                raise Http404("Invalid Senior range. Must be within 500 and 999.")
+                
+        # Limit batch size to 100 pages to avoid timeouts
+        if (end - start + 1) > 100:
+            raise Http404("Batch size cannot exceed 100 pages.")
             
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="School_{school_code}_{group_upper.lower()}_OMR_Pack.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="School_{school_code}_{group_upper.lower()}_{start}_to_{end}.pdf"'
         
         # Import drawing helpers dynamically to prevent circular imports
         from reportlab.pdfgen import canvas
@@ -213,7 +217,7 @@ class PregeneratedOMRDownloadView(LoginRequiredMixin, View):
             
         try:
             c = canvas.Canvas(tmp_path, pagesize=A4)
-            for r in range(start_num, end_num + 1):
+            for r in range(start, end + 1):
                 roll_number = f"{school_code}{r:03d}"
                 p = MockParticipant(roll_number, school_obj, group_upper)
                 draw_omr_sheet_on_canvas(c, p)

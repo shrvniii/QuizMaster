@@ -46,28 +46,37 @@ class PregeneratedOMRTestCase(TestCase):
         
     def test_junior_omr_download(self):
         self.client.force_login(self.user)
-        response = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '05', 'group': 'junior'}))
+        response = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '05', 'group': 'junior', 'start': 1, 'end': 100}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/pdf')
-        self.assertIn('attachment; filename="School_05_junior_OMR_Pack.pdf"', response['Content-Disposition'])
+        self.assertIn('attachment; filename="School_05_junior_1_to_100.pdf"', response['Content-Disposition'])
 
     def test_senior_omr_download(self):
         self.client.force_login(self.user)
-        response = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '40', 'group': 'senior'}))
+        response = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '40', 'group': 'senior', 'start': 500, 'end': 599}))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'application/pdf')
-        self.assertIn('attachment; filename="School_40_senior_OMR_Pack.pdf"', response['Content-Disposition'])
+        self.assertIn('attachment; filename="School_40_senior_500_to_599.pdf"', response['Content-Disposition'])
 
     def test_invalid_school_code(self):
         self.client.force_login(self.user)
         # Suffix/code too long
-        response1 = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '123', 'group': 'junior'}))
+        response1 = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '123', 'group': 'junior', 'start': 1, 'end': 100}))
         self.assertEqual(response1.status_code, 404)
         # Out of bounds code
-        response2 = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '51', 'group': 'junior'}))
+        response2 = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '51', 'group': 'junior', 'start': 1, 'end': 100}))
         self.assertEqual(response2.status_code, 404)
 
     def test_invalid_group(self):
         self.client.force_login(self.user)
-        response = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '01', 'group': 'invalid'}))
+        response = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '01', 'group': 'invalid', 'start': 1, 'end': 100}))
         self.assertEqual(response.status_code, 404)
+
+    def test_out_of_bounds_range_and_limit(self):
+        self.client.force_login(self.user)
+        # Junior starting at 500 (invalid)
+        response1 = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '01', 'group': 'junior', 'start': 500, 'end': 550}))
+        self.assertEqual(response1.status_code, 404)
+        # Batch size too large (150 pages)
+        response2 = self.client.get(reverse('reports:download_pregenerated_omr', kwargs={'school_code': '01', 'group': 'junior', 'start': 1, 'end': 150}))
+        self.assertEqual(response2.status_code, 404)

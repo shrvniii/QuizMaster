@@ -22,5 +22,5 @@ urlpatterns = [
     path('download/blank-omr/', BlankOMRSheetDownloadView.as_view(), name='blank_omr'),
     path('download/personalized-omr/<int:participant_id>/', PersonalizedOMRSheetDownloadView.as_view(), name='personalized_omr'),
     path('download/school-omr/<int:school_id>/', SchoolOMRSheetsDownloadView.as_view(), name='school_omr'),
-    path('download/pregenerated-omr/<str:school_code>/<str:group>/', PregeneratedOMRDownloadView.as_view(), name='download_pregenerated_omr'),
+    path('download/pregenerated-omr/<str:school_code>/<str:group>/<int:start>/<int:end>/', PregeneratedOMRDownloadView.as_view(), name='download_pregenerated_omr'),
 ]
