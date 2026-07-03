@@ -72,79 +72,110 @@
     </div>
 </div>
 
-<!-- Question Breakdown (2 Column Layout) -->
-<div class="card">
-    <h3 style="margin-bottom: 20px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-        <span>Question-by-Question Breakdown</span>
-        <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">Marked vs. Correct Key</span>
-    </h3>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
-        <!-- Column 1 (Q1-Q25) -->
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid var(--border-color); padding-bottom: 6px; margin-bottom: 6px;">
-                <span style="width: 60px;">Q.No</span>
-                <span style="width: 100px; text-align: center;">Marked</span>
-                <span style="width: 100px; text-align: center;">Correct</span>
-                <span style="flex-grow: 1; text-align: right;">Status</span>
-            </div>
+<!-- Question Breakdown & OMR Sheet Viewer (2 Column Layout) -->
+<div style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 24px;">
+    <!-- Left Column: Question Breakdown -->
+    <div style="flex: 2 1 550px;">
+        <div class="card" style="margin-bottom: 0;">
+            <h3 style="margin-bottom: 20px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span>Question-by-Question Breakdown</span>
+                <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">Marked vs. Correct Key</span>
+            </h3>
             
-            {% for item in result.question_breakdown %}
-                {% if forloop.counter <= 25 %}
-                    <div style="display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-color); font-size: 14px;">
-                        <span style="width: 60px; font-weight: 700; color: var(--text-muted);">Q{{ item.q_no }}</span>
-                        <span style="width: 100px; text-align: center; font-weight: 600; font-family: monospace;">{{ item.detected }}</span>
-                        <span style="width: 100px; text-align: center; font-weight: 600; font-family: monospace; color: var(--accent-color);">{{ item.correct }}</span>
-                        <span style="flex-grow: 1; text-align: right;">
-                            {% if item.status == 'correct' %}
-                                <span class="badge badge-success" style="padding: 2px 8px; font-size: 10px;">Correct</span>
-                            {% elif item.status == 'unanswered' %}
-                                <span class="badge badge-warning" style="padding: 2px 8px; font-size: 10px;">Blank</span>
-                            {% elif item.status == 'multi-marked' %}
-                                <span class="badge badge-danger" style="background-color: #E2E8F0; color: #475569; padding: 2px 8px; font-size: 10px;">Multi</span>
-                            {% else %}
-                                <span class="badge badge-danger" style="padding: 2px 8px; font-size: 10px;">Wrong</span>
-                            {% endif %}
-                        </span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <!-- Column 1 (Q1-Q25) -->
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <div style="display: flex; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid var(--border-color); padding-bottom: 6px; margin-bottom: 6px;">
+                        <span style="width: 60px;">Q.No</span>
+                        <span style="width: 100px; text-align: center;">Marked</span>
+                        <span style="width: 100px; text-align: center;">Correct</span>
+                        <span style="flex-grow: 1; text-align: right;">Status</span>
                     </div>
-                {% endif %}
-            {% endfor %}
-        </div>
-        
-        <!-- Column 2 (Q26-Q50) -->
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid var(--border-color); padding-bottom: 6px; margin-bottom: 6px;">
-                <span style="width: 60px;">Q.No</span>
-                <span style="width: 100px; text-align: center;">Marked</span>
-                <span style="width: 100px; text-align: center;">Correct</span>
-                <span style="flex-grow: 1; text-align: right;">Status</span>
+                    
+                    {% for item in result.question_breakdown %}
+                        {% if forloop.counter <= 25 %}
+                            <div style="display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-color); font-size: 14px;">
+                                <span style="width: 60px; font-weight: 700; color: var(--text-muted);">Q{{ item.q_no }}</span>
+                                <span style="width: 100px; text-align: center; font-weight: 600; font-family: monospace;">{{ item.detected }}</span>
+                                <span style="width: 100px; text-align: center; font-weight: 600; font-family: monospace; color: var(--accent-color);">{{ item.correct }}</span>
+                                <span style="flex-grow: 1; text-align: right;">
+                                    {% if item.status == 'correct' %}
+                                        <span class="badge badge-success" style="padding: 2px 8px; font-size: 10px;">Correct</span>
+                                    {% elif item.status == 'unanswered' %}
+                                        <span class="badge badge-warning" style="padding: 2px 8px; font-size: 10px;">Blank</span>
+                                    {% elif item.status == 'multi-marked' %}
+                                        <span class="badge badge-danger" style="background-color: #E2E8F0; color: #475569; padding: 2px 8px; font-size: 10px;">Multi</span>
+                                    {% else %}
+                                        <span class="badge badge-danger" style="padding: 2px 8px; font-size: 10px;">Wrong</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <!-- Column 2 (Q26-Q50) -->
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <div style="display: flex; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--text-muted); border-bottom: 2px solid var(--border-color); padding-bottom: 6px; margin-bottom: 6px;">
+                        <span style="width: 60px;">Q.No</span>
+                        <span style="width: 100px; text-align: center;">Marked</span>
+                        <span style="width: 100px; text-align: center;">Correct</span>
+                        <span style="flex-grow: 1; text-align: right;">Status</span>
+                    </div>
+                    
+                    {% for item in result.question_breakdown %}
+                        {% if forloop.counter > 25 %}
+                            <div style="display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-color); font-size: 14px;">
+                                <span style="width: 60px; font-weight: 700; color: var(--text-muted);">Q{{ item.q_no }}</span>
+                                <span style="width: 100px; text-align: center; font-weight: 600; font-family: monospace;">{{ item.detected }}</span>
+                                <span style="width: 100px; text-align: center; font-weight: 600; font-family: monospace; color: var(--accent-color);">{{ item.correct }}</span>
+                                <span style="flex-grow: 1; text-align: right;">
+                                    {% if item.status == 'correct' %}
+                                        <span class="badge badge-success" style="padding: 2px 8px; font-size: 10px;">Correct</span>
+                                    {% elif item.status == 'unanswered' %}
+                                        <span class="badge badge-warning" style="padding: 2px 8px; font-size: 10px;">Blank</span>
+                                    {% elif item.status == 'multi-marked' %}
+                                        <span class="badge badge-danger" style="background-color: #E2E8F0; color: #475569; padding: 2px 8px; font-size: 10px;">Multi</span>
+                                    {% else %}
+                                        <span class="badge badge-danger" style="padding: 2px 8px; font-size: 10px;">Wrong</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
             </div>
-            
-            {% for item in result.question_breakdown %}
-                {% if forloop.counter > 25 %}
-                    <div style="display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-color); font-size: 14px;">
-                        <span style="width: 60px; font-weight: 700; color: var(--text-muted);">Q{{ item.q_no }}</span>
-                        <span style="width: 100px; text-align: center; font-weight: 600; font-family: monospace;">{{ item.detected }}</span>
-                        <span style="width: 100px; text-align: center; font-weight: 600; font-family: monospace; color: var(--accent-color);">{{ item.correct }}</span>
-                        <span style="flex-grow: 1; text-align: right;">
-                            {% if item.status == 'correct' %}
-                                <span class="badge badge-success" style="padding: 2px 8px; font-size: 10px;">Correct</span>
-                            {% elif item.status == 'unanswered' %}
-                                <span class="badge badge-warning" style="padding: 2px 8px; font-size: 10px;">Blank</span>
-                            {% elif item.status == 'multi-marked' %}
-                                <span class="badge badge-danger" style="background-color: #E2E8F0; color: #475569; padding: 2px 8px; font-size: 10px;">Multi</span>
-                            {% else %}
-                                <span class="badge badge-danger" style="padding: 2px 8px; font-size: 10px;">Wrong</span>
-                            {% endif %}
-                        </span>
-                    </div>
-                {% endif %}
-            {% endfor %}
         </div>
     </div>
-    
-    <!-- Actions -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+
+    <!-- Right Column: Scanned OMR Sheet Image -->
+    <div style="flex: 1 1 320px; max-width: 480px; width: 100%;">
+        <div class="card" style="margin-bottom: 0;">
+            <h3 style="margin-bottom: 20px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span>Scanned OMR Sheet</span>
+            </h3>
+            
+            <div style="text-align: center; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background-color: #0f172a; padding: 12px; display: flex; align-items: center; justify-content: center; min-height: 400px;">
+                {% if result.submission.image %}
+                    <img src="{{ result.submission.image.url }}" alt="Scanned OMR Sheet" style="max-width: 100%; max-height: 600px; object-fit: contain; border-radius: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                {% else %}
+                    <p style="color: #94a3b8; font-size: 14px;">No sheet image available.</p>
+                {% endif %}
+            </div>
+            
+            {% if result.submission.image %}
+                <a href="{{ result.submission.image.url }}" target="_blank" class="btn btn-secondary btn-sm" style="margin-top: 16px; width: 100%; justify-content: center;">
+                    <i class="bi bi-zoom-in"></i>
+                    <span>View Full Size Image</span>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="card" style="padding: 16px 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
         <a href="{% url 'results:list' %}" class="btn btn-secondary">
             <i class="bi bi-arrow-left"></i>
             <span>Back to Results</span>
