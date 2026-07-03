@@ -135,6 +135,35 @@
         </div>
     </div>
     
+    <!-- Pre-printed OMR Sheets (Bulk) -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 220px; border-top: 4px solid #EC4899;">
+        <div>
+            <h3 style="font-size: 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-printer-fill" style="color: #EC4899;"></i>
+                <span>Pre-printed OMR Sheets</span>
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                Download OMR sheets with pre-printed student names, schools, groups, and pre-bubbled roll numbers. Select a school to download in bulk, or download all sheets.
+            </p>
+            <div class="form-group" style="margin-bottom: 0; display: flex; flex-direction: column; gap: 8px;">
+                <select id="omr-school-select" class="form-control" style="height: 38px; font-size: 13px;">
+                    <option value="">Select School...</option>
+                    {% for school in schools %}
+                        <option value="{{ school.pk }}">{{ school.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 16px; display: flex; justify-content: space-between; align-items: center;">
+            <a href="{% url 'reports:all_omr' %}" class="btn btn-secondary btn-sm" style="border-color: #EC4899; color: #EC4899;">
+                Download All OMRs
+            </a>
+            <button onclick="downloadSchoolOMRs()" class="btn btn-primary btn-sm" id="omr-school-btn" style="background-color: #EC4899; color: white;" disabled>
+                <i class="bi bi-download"></i> School OMRs
+            </button>
+        </div>
+    </div>
+    
 </div>
 {% endblock %}
 
@@ -144,6 +173,8 @@
     const indBtn = document.getElementById('individual-btn');
     const schSelect = document.getElementById('school-select');
     const schBtn = document.getElementById('school-btn');
+    const omrSchSelect = document.getElementById('omr-school-select');
+    const omrSchBtn = document.getElementById('omr-school-btn');
     
     if (indSelect && indBtn) {
         indSelect.addEventListener('change', function() {
@@ -154,6 +185,12 @@
     if (schSelect && schBtn) {
         schSelect.addEventListener('change', function() {
             schBtn.disabled = !this.value;
+        });
+    }
+    
+    if (omrSchSelect && omrSchBtn) {
+        omrSchSelect.addEventListener('change', function() {
+            omrSchBtn.disabled = !this.value;
         });
     }
     
@@ -168,6 +205,13 @@
         const val = schSelect.value;
         if (val) {
             window.location.href = `/reports/download/school/${val}/`;
+        }
+    }
+    
+    function downloadSchoolOMRs() {
+        const val = omrSchSelect.value;
+        if (val) {
+            window.location.href = `/reports/download/school-omr/${val}/`;
         }
     }
 </script>

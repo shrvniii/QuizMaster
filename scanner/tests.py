@@ -439,3 +439,59 @@ class BulkOMRUploadTestCase(TestCase):
         print("Bulk OMR PDF pipeline unit test passed successfully!")
 
 
+class ParticipantValidationTestCase(TestCase):
+    def setUp(self):
+        self.school = School.objects.create(name="Test Academy", code="02")
+
+    def test_valid_junior_roll_number(self):
+        p = Participant(
+            roll_number="02005",
+            full_name="Junior Valid",
+            school=self.school,
+            group="JUNIOR",
+            paper_set="SET_A"
+        )
+        # Should not raise any ValidationError
+        p.full_clean()
+        p.save()
+        self.assertTrue(Participant.objects.filter(roll_number="02005").exists())
+
+    def test_invalid_junior_roll_number(self):
+        from django.core.exceptions import ValidationError
+        p = Participant(
+            roll_number="02505",  # 505 is in senior range
+            full_name="Junior Invalid",
+            school=self.school,
+            group="JUNIOR",
+            paper_set="SET_A"
+        )
+        with self.assertRaises(ValidationError):
+            p.full_clean()
+
+    def test_valid_senior_roll_number(self):
+        p = Participant(
+            roll_number="02505",
+            full_name="Senior Valid",
+            school=self.school,
+            group="SENIOR",
+            paper_set="SET_B"
+        )
+        # Should not raise any ValidationError
+        p.full_clean()
+        p.save()
+        self.assertTrue(Participant.objects.filter(roll_number="02505").exists())
+
+    def test_invalid_senior_roll_number(self):
+        from django.core.exceptions import ValidationError
+        p = Participant(
+            roll_number="02005",  # 005 is in junior range
+            full_name="Senior Invalid",
+            school=self.school,
+            group="SENIOR",
+            paper_set="SET_B"
+        )
+        with self.assertRaises(ValidationError):
+            p.full_clean()
+
+
+

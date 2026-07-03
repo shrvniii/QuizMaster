@@ -51,12 +51,20 @@ class Participant(models.Model):
                         'roll_number': f"The first 2 digits of the roll number ('{roll_school_code}') must match the selected school's code '{school_code}'."
                     })
                     
-        # 3. Last 3 digits must be between 000 and 999
+        # 3. Validate unique number range based on group selection
         last_three_str = self.roll_number[2:]
         try:
             last_three_val = int(last_three_str)
-            if not (0 <= last_three_val <= 999):
-                raise ValidationError({'roll_number': "The last 3 digits of the roll number must be between '000' and '999'."})
+            if self.group == 'JUNIOR':
+                if not (0 <= last_three_val <= 499):
+                    raise ValidationError({
+                        'roll_number': "For JUNIOR group, the last 3 digits of the roll number must be between '000' and '499'."
+                    })
+            elif self.group == 'SENIOR':
+                if not (500 <= last_three_val <= 999):
+                    raise ValidationError({
+                        'roll_number': "For SENIOR group, the last 3 digits of the roll number must be between '500' and '999'."
+                    })
         except ValueError:
             raise ValidationError({'roll_number': 'The last 3 digits of the roll number must be numeric.'})
 

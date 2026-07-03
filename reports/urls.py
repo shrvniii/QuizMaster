@@ -5,7 +5,10 @@ from .views import (
     SchoolReportDownloadView, 
     RankingReportDownloadView, 
     CSVReportDownloadView,
-    BlankOMRSheetDownloadView
+    BlankOMRSheetDownloadView,
+    PersonalizedOMRSheetDownloadView,
+    SchoolOMRSheetsDownloadView,
+    AllOMRSheetsDownloadView
 )
 
 app_name = 'reports'
@@ -17,4 +20,7 @@ urlpatterns = [
     path('download/ranking/<str:group>/', RankingReportDownloadView.as_view(), name='ranking_download'),
     path('download/csv/', CSVReportDownloadView.as_view(), name='csv_download'),
     path('download/blank-omr/', BlankOMRSheetDownloadView.as_view(), name='blank_omr'),
+    path('download/personalized-omr/<int:participant_id>/', PersonalizedOMRSheetDownloadView.as_view(), name='personalized_omr'),
+    path('download/school-omr/<int:school_id>/', SchoolOMRSheetsDownloadView.as_view(), name='school_omr'),
+    path('download/all-omr/', AllOMRSheetsDownloadView.as_view(), name='all_omr'),
 ]

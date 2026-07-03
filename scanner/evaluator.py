@@ -383,7 +383,16 @@ def evaluate_and_grade_submission(submission_id):
                             )
                         
                         detected_set = detect_exam_set(thresh) or 'SET_A'
-                        detected_group = detect_group(thresh) or 'JUNIOR'
+                        
+                        # Determine group based on unique number range (0-499 = JUNIOR, 500-999 = SENIOR)
+                        try:
+                            unique_val = int(detected_roll[2:])
+                            if 0 <= unique_val <= 499:
+                                detected_group = 'JUNIOR'
+                            else:
+                                detected_group = 'SENIOR'
+                        except ValueError:
+                            detected_group = 'JUNIOR'
                             
                         participant = Participant.objects.create(
                             roll_number=detected_roll,

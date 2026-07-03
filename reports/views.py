@@ -1,11 +1,11 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, Http404
 from django.contrib import messages
 from .pdf_builder import build_individual_slip_pdf, build_school_results_pdf, build_ranking_list_pdf
 from .csv_builder import build_rankings_csv
-from scanner.omr_generator import generate_blank_omr_pdf
+from scanner.omr_generator import generate_blank_omr_pdf, generate_personalized_omr_pdf, generate_personalized_omr_sheets_pdf
 from results.models import Result
 from results.ranking import calculate_dense_ranks
 from participants.models import Participant
@@ -101,6 +101,72 @@ class BlankOMRSheetDownloadView(LoginRequiredMixin, View):
             
         try:
             generate_blank_omr_pdf(tmp_path)
+            with open(tmp_path, 'rb') as f:
+                response.write(f.read())
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+                
+        return response
+
+class PersonalizedOMRSheetDownloadView(LoginRequiredMixin, View):
+    def get(self, request, participant_id):
+        participant = get_object_or_404(Participant, pk=participant_id)
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="omr_{participant.roll_number}.pdf"'
+        
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
+            tmp_path = tmp.name
+            
+        try:
+            generate_personalized_omr_pdf(tmp_path, participant)
+            with open(tmp_path, 'rb') as f:
+                response.write(f.read())
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+                
+        return response
+
+class SchoolOMRSheetsDownloadView(LoginRequiredMixin, View):
+    def get(self, request, school_id):
+        school = get_object_or_404(School, pk=school_id)
+        participants = Participant.objects.filter(school=school).order_by('roll_number')
+        if not participants.exists():
+            messages.error(request, f"No participants registered for {school.name}.")
+            return redirect('reports:list')
+            
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="omr_sheets_school_{school.code}.pdf"'
+        
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
+            tmp_path = tmp.name
+            
+        try:
+            generate_personalized_omr_sheets_pdf(tmp_path, participants)
+            with open(tmp_path, 'rb') as f:
+                response.write(f.read())
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+                
+        return response
+
+class AllOMRSheetsDownloadView(LoginRequiredMixin, View):
+    def get(self, request):
+        participants = Participant.objects.select_related('school').order_by('school__name', 'roll_number')
+        if not participants.exists():
+            messages.error(request, "No participants registered in the database.")
+            return redirect('reports:list')
+            
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="omr_sheets_all_participants.pdf"'
+        
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
+            tmp_path = tmp.name
+            
+        try:
+            generate_personalized_omr_sheets_pdf(tmp_path, participants)
             with open(tmp_path, 'rb') as f:
                 response.write(f.read())
         finally:

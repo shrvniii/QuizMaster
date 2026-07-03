@@ -112,6 +112,9 @@
                         {% endif %}
                     </td>
                     <td style="text-align: right; display: flex; justify-content: flex-end; gap: 8px;">
+                        <a href="{% url 'reports:personalized_omr' participant.pk %}" class="btn btn-secondary btn-sm" title="Download Pre-printed OMR Sheet" target="_blank">
+                            <i class="bi bi-file-earmark-pdf-fill" style="color: #EC4899;"></i>
+                        </a>
                         {% if participant.omr_submission and participant.omr_submission.status == 'EVALUATED' %}
                             <a href="{% url 'results:detail' participant.omr_submission.result.pk %}" class="btn btn-secondary btn-sm" title="View Result" style="color: var(--success-color);">
                                 <i class="bi bi-eye"></i>
