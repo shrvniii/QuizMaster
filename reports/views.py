@@ -26,9 +26,12 @@ class ReportListView(LoginRequiredMixin, View):
             omr_submission__status='EVALUATED'
         ).order_by('roll_number')
         
+        school_codes = [f"{i:02d}" for i in range(1, 51)]
+        
         context = {
             'schools': schools,
-            'participants': participants_with_results
+            'participants': participants_with_results,
+            'school_codes': school_codes,
         }
         return render(request, 'reports/report_list.html', context)
 
@@ -161,6 +164,62 @@ class SchoolOMRSheetsDownloadView(LoginRequiredMixin, View):
             
         try:
             generate_school_omr_sheets_pdf(tmp_path, school)
+            with open(tmp_path, 'rb') as f:
+                response.write(f.read())
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+                
+        return response
+
+
+class PregeneratedOMRDownloadView(LoginRequiredMixin, View):
+    def get(self, request, school_code, group):
+        # Validate school code is a 2-digit numeric code between 01 and 50
+        if not school_code.isdigit() or len(school_code) != 2:
+            raise Http404("Invalid school code format. Must be a 2-digit number.")
+            
+        code_val = int(school_code)
+        if not (1 <= code_val <= 50):
+            raise Http404("School code must be between 01 and 50.")
+            
+        group_upper = group.upper()
+        if group_upper not in ['JUNIOR', 'SENIOR']:
+            raise Http404("Group must be either JUNIOR or SENIOR.")
+            
+        # Determine ranges: Junior 1 to 499, Senior 500 to 999
+        if group_upper == 'JUNIOR':
+            start_num = 1
+            end_num = 499
+        else:
+            start_num = 500
+            end_num = 999
+            
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="School_{school_code}_{group_upper.lower()}_OMR_Pack.pdf"'
+        
+        # Import drawing helpers dynamically to prevent circular imports
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import A4
+        from scanner.omr_generator import draw_omr_sheet_on_canvas, MockParticipant
+        from schools.models import School
+        
+        # Find or create a temporary/mock school object matching School fields
+        school_name = f"School (Code: {school_code})"
+        school_obj = School(code=school_code, name=school_name)
+        
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
+            tmp_path = tmp.name
+            
+        try:
+            c = canvas.Canvas(tmp_path, pagesize=A4)
+            for r in range(start_num, end_num + 1):
+                roll_number = f"{school_code}{r:03d}"
+                p = MockParticipant(roll_number, school_obj, group_upper)
+                draw_omr_sheet_on_canvas(c, p)
+                c.showPage()
+            c.save()
+            
             with open(tmp_path, 'rb') as f:
                 response.write(f.read())
         finally:
