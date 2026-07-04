@@ -207,9 +207,11 @@ class PregeneratedOMRDownloadView(LoginRequiredMixin, View):
         from scanner.omr_generator import draw_omr_sheet_on_canvas, MockParticipant
         from schools.models import School
         
-        # Find or create a temporary/mock school object matching School fields
-        school_name = f"School (Code: {school_code})"
-        school_obj = School(code=school_code, name=school_name)
+        try:
+            school_obj = School.objects.get(code=school_code)
+        except School.DoesNotExist:
+            school_name = f"School (Code: {school_code})"
+            school_obj = School(code=school_code, name=school_name)
         
         with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as tmp:
             tmp_path = tmp.name

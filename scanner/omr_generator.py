@@ -64,6 +64,7 @@ def draw_omr_instructions(c, x, y):
     c.setLineWidth(0.5)
     c.line(x + 55 - 3.5, y - 124 - 3.5, x + 55 + 3.5, y - 124 + 3.5)
     c.line(x + 55 - 3.5, y - 124 + 3.5, x + 55 + 3.5, y - 124 - 3.5)
+    c.setFillColor(black)
     c.drawString(x + 70, y - 126, "(Rejected)")
     
     # C. Multi-marked (Rejected)
@@ -92,6 +93,7 @@ def draw_omr_instructions(c, x, y):
     c.setLineWidth(0.5)
     c.line(x + 53, y - 184, x + 55, y - 186)
     c.line(x + 55, y - 186, x + 58, y - 181)
+    c.setFillColor(black)
     c.drawString(x + 70, y - 186, "(Rejected)")
 
 def draw_omr_sheet_on_canvas(c, participant=None):
