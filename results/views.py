@@ -38,7 +38,7 @@ class ResultListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['schools'] = School.objects.all().order_by('name')
+        context['schools'] = School.objects.all().order_by('code')
         
         # Add ranks dynamically to the paginated list for display
         all_results = list(Result.objects.filter(submission__is_accepted=True).select_related('participant').order_by('-score'))
@@ -105,7 +105,7 @@ class RankingsView(LoginRequiredMixin, View):
         calculate_dense_ranks(overall_results)
         
         # 4. School-wise Rankings
-        schools = School.objects.all().order_by('name')
+        schools = School.objects.all().order_by('code')
         selected_school_id = request.GET.get('school', '')
         
         school_junior_ranked = []

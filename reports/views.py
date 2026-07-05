@@ -21,7 +21,7 @@ import os
 
 class ReportListView(LoginRequiredMixin, View):
     def get(self, request):
-        schools = School.objects.all().order_by('name')
+        schools = School.objects.all().order_by('code')
         participants_with_results = Participant.objects.filter(
             omr_submission__status='EVALUATED'
         ).order_by('roll_number')

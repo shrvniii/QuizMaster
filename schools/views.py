@@ -13,7 +13,7 @@ class SchoolListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         # Annotate each school with the count of participants
-        return School.objects.annotate(participant_count=Count('participants')).order_by('name')
+        return School.objects.annotate(participant_count=Count('participants')).order_by('code')
 
 class SchoolCreateView(LoginRequiredMixin, CreateView):
     model = School

@@ -50,7 +50,7 @@ class ParticipantListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['schools'] = School.objects.all().order_by('name')
+        context['schools'] = School.objects.all().order_by('code')
         # Preserve query parameters for pagination
         query_params = self.request.GET.copy()
         if 'page' in query_params:
