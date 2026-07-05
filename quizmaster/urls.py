@@ -7,7 +7,7 @@ from scanner import views as scanner_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', lambda request: redirect('dashboard:home')), # Redirect root URL to dashboard
+    path('', lambda request: redirect('dashboard:about')), # Redirect root URL to about page
     path('accounts/', include('accounts.urls')),
     path('dashboard/', include('dashboard.urls')),
     path('schools/', include('schools.urls')),
