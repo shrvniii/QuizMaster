@@ -24,8 +24,8 @@
 }
 
 body {
-    font-family: 'Times New Roman', Times, 'Baskerville', 'Georgia', serif;
-    font-size: 16px;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
     line-height: 1.6;
     background-color: var(--bg-color);
     color: var(--text-primary);

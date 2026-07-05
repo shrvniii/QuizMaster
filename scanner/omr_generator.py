@@ -15,7 +15,7 @@ def draw_omr_instructions(c, x, y):
     """
     Draws the visual instruction box on the bottom left of the OMR page.
     """
-    c.setFont("Times-Bold", 7.5)
+    c.setFont("Helvetica-Bold", 7.5)
     c.setFillColor(HexColor("#0D2B4E"))
     c.drawString(x, y, "IMPORTANT INSTRUCTIONS")
     
@@ -24,7 +24,7 @@ def draw_omr_instructions(c, x, y):
     c.setLineWidth(0.5)
     c.rect(x - 5, y - 205, 120, 215, fill=0)
     
-    c.setFont("Times-Roman", 6.5)
+    c.setFont("Helvetica", 6.5)
     c.setFillColor(black)
     
     # Guidelines text
@@ -40,11 +40,11 @@ def draw_omr_instructions(c, x, y):
     c.drawString(x, y - 72, "   on the sheet.")
     
     # Title for marking examples
-    c.setFont("Times-Bold", 7)
+    c.setFont("Helvetica-Bold", 7)
     c.setFillColor(HexColor("#0D2B4E"))
     c.drawString(x, y - 88, "MARKING EXAMPLES")
     
-    c.setFont("Times-Roman", 6.5)
+    c.setFont("Helvetica", 6.5)
     c.setFillColor(black)
     
     bubble_r = 3.5
@@ -102,10 +102,10 @@ def draw_omr_sheet_on_canvas(c, participant=None):
     If a participant object is provided, pre-prints their details and pre-bubbles their Roll No and Group.
     """
     # 0. Title above the header box
-    c.setFont("Times-Bold", 16)
+    c.setFont("Helvetica-Bold", 16)
     c.setFillColor(HexColor("#0D2B4E"))
     c.drawCentredString(297, 815, "BHARAT KO JANO")
-    c.setFont("Times-Bold", 9)
+    c.setFont("Helvetica-Bold", 9)
     c.setFillColor(HexColor("#1E3A8A"))
     c.drawCentredString(297, 800, "Online Quiz Management System (BKJ-QMS)")
 
@@ -121,7 +121,7 @@ def draw_omr_sheet_on_canvas(c, participant=None):
     c.line(70, 765, 525, 765)
     
     # Header Labels
-    c.setFont("Times-Bold", 10)
+    c.setFont("Helvetica-Bold", 10)
     c.setFillColor(HexColor("#0D2B4E"))
     c.drawString(80, 772, "STUDENT NAME (Write in Capital Letters) :")
     c.drawString(80, 747, "SCHOOL NAME :")
@@ -130,7 +130,7 @@ def draw_omr_sheet_on_canvas(c, participant=None):
     
     # Pre-fill participant data if provided
     if participant:
-        c.setFont("Times-Bold", 10)
+        c.setFont("Helvetica-Bold", 10)
         c.setFillColor(black)
         
         # Display School Name
@@ -231,11 +231,11 @@ def draw_omr_sheet_on_canvas(c, participant=None):
                 c.circle(bx, ry, bubble_r, fill=0, stroke=1)
                 
     # 3. Group (Junior / Senior)
-    c.setFont("Times-Bold", 10)
+    c.setFont("Helvetica-Bold", 10)
     c.setFillColor(HexColor("#0D2B4E"))
     c.drawString(col0_x, 330, "Group")
     
-    c.setFont("Times-Roman", 8)
+    c.setFont("Helvetica", 8)
     c.drawString(col0_x, 317, "Junior")
     c.drawString(col0_x + 35, 317, "Senior")
     
@@ -266,29 +266,29 @@ def draw_omr_sheet_on_canvas(c, participant=None):
             
     # Middle Column: Questions 1 - 25
     col1_x = 225
-    c.setFont("Times-Bold", 11)
+    c.setFont("Helvetica-Bold", 11)
     c.setFillColor(HexColor("#0D2B4E"))
     c.drawString(col1_x - 35, 635, "Section 1 (Q1-Q25)")
     
     # Column Headers A B C D
-    c.setFont("Times-Bold", 8)
+    c.setFont("Helvetica-Bold", 8)
     for idx, opt in enumerate(["A", "B", "C", "D"]):
         c.drawCentredString(col1_x + (idx * 22), 618, opt)
         
     # Right Column: Questions 26 - 50
     col2_x = 410
-    c.setFont("Times-Bold", 11)
+    c.setFont("Helvetica-Bold", 11)
     c.setFillColor(HexColor("#0D2B4E"))
     c.drawString(col2_x - 35, 635, "Section 2 (Q26-Q50)")
     
     # Column Headers A B C D
-    c.setFont("Times-Bold", 8)
+    c.setFont("Helvetica-Bold", 8)
     for idx, opt in enumerate(["A", "B", "C", "D"]):
         c.drawCentredString(col2_x + (idx * 22), 618, opt)
         
     # Helper to draw question rows in blocks of 5
     def draw_question_row(q_num, x, y):
-        c.setFont("Times-Bold", 9)
+        c.setFont("Helvetica-Bold", 9)
         c.setFillColor(HexColor("#0D2B4E"))
         c.drawString(x - 35, y - 3, f"{q_num:02d}")
         
@@ -302,7 +302,7 @@ def draw_omr_sheet_on_canvas(c, participant=None):
             c.circle(bx, y, bubble_r, fill=0)
             
             # Letter
-            c.setFont("Times-Roman", 7)
+            c.setFont("Helvetica", 7)
             c.setFillColor(HexColor("#0D2B4E"))
             c.drawCentredString(bx, y - 2.5, opt)
             
@@ -323,7 +323,7 @@ def draw_omr_sheet_on_canvas(c, participant=None):
     c.line(378, 645, 378, 75)
     
     # Footer
-    c.setFont("Times-Italic", 8)
+    c.setFont("Helvetica-Oblique", 8)
     c.setFillColor(HexColor("#94A3B8"))
     c.drawCentredString(297, 25, "BKJ-QMS System • Designed for Bharat Ko Jano Quiz Evaluation")
 
