@@ -28,13 +28,13 @@
         
         <h2 style="margin-bottom: 12px; color: var(--primary-color); font-size: 18px;">Default School List</h2>
         <p style="color: var(--text-muted); font-size: 13px; margin-bottom: 16px;">
-            Quickly populate or restore the list of 29 default participating schools (Codes 01 to 29).
+            Quickly populate or restore the list of 36 default participating schools (Codes 01 to 36).
         </p>
         
         <form method="post" action="{% url 'dashboard:restore_schools' %}">
             {% csrf_token %}
             <button type="submit" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 8px;">
-                <i class="bi bi-arrow-counterclockwise"></i> Restore 29 Default Schools
+                <i class="bi bi-arrow-counterclockwise"></i> Restore 36 Default Schools
             </button>
         </form>
     </div>
