@@ -353,6 +353,17 @@ def evaluate_and_grade_submission(submission_id):
             if img is None:
                 raise ValueError("Could not load image file.")
                 
+            # If the image is large, resize it to a max width/height of 1600px to prevent Out-of-Memory crashes
+            max_dimension = 1600
+            h, w = img.shape[:2]
+            if max(h, w) > max_dimension:
+                scale = max_dimension / max(h, w)
+                new_w = int(w * scale)
+                new_h = int(h * scale)
+                img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
+                # Overwrite original image with resized version to save disk space and load fast in browser
+                cv2.imwrite(image_path, img)
+                
             # Convert to grayscale
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             
