@@ -74,12 +74,19 @@ class ParticipantDeleteView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('participants:list')
 
     def form_valid(self, form):
+        import os
         participant = self.get_object()
         if hasattr(participant, 'omr_submission'):
-            messages.error(self.request, f"Cannot delete '{participant.roll_number}' because an OMR sheet has already been uploaded.")
-            return redirect('participants:list')
+            sub = participant.omr_submission
+            if sub.image and os.path.exists(sub.image.path):
+                try:
+                    os.remove(sub.image.path)
+                except OSError:
+                    pass
+            messages.success(self.request, f"Participant '{participant.roll_number}' and their scanned results deleted successfully.")
+        else:
+            messages.success(self.request, f"Participant '{participant.roll_number}' deleted successfully.")
             
-        messages.success(self.request, f"Participant '{participant.roll_number}' deleted successfully.")
         return super().form_valid(form)
 
 class ParticipantImportView(LoginRequiredMixin, View):

@@ -112,15 +112,9 @@
                         <a href="{% url 'participants:edit' participant.pk %}" class="btn btn-secondary btn-sm" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </a>
-                        {% if not participant.omr_submission %}
-                            <a href="{% url 'participants:delete' participant.pk %}" class="btn btn-danger btn-sm" title="Delete">
-                                <i class="bi bi-trash"></i>
-                            </a>
-                        {% else %}
-                            <button class="btn btn-secondary btn-sm" disabled style="opacity: 0.5; cursor: not-allowed;" title="Cannot delete: OMR sheet exists">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        {% endif %}
+                        <a href="{% url 'participants:delete' participant.pk %}" class="btn btn-danger btn-sm" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </a>
                     </td>
                 </tr>
             {% empty %}

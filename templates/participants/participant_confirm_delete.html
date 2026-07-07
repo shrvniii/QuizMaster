@@ -15,10 +15,14 @@
         You are about to delete the participant with Roll No: <code>{{ participant.roll_number }}</code>. This action is permanent and cannot be undone.
     </p>
     
-    <div class="alert alert-warning" style="margin-bottom: 24px;">
-        <i class="bi bi-info-circle-fill"></i>
-        <span>You cannot delete a participant who already has an OMR sheet and score recorded. You must delete their OMR submission first.</span>
+    {% if participant.omr_submission %}
+    <div class="alert alert-danger" style="margin-bottom: 24px; font-size: 13px; line-height: 1.5; padding: 12px 16px;">
+        <i class="bi bi-exclamation-triangle-fill" style="font-size: 16px;"></i>
+        <span>
+            <strong>Warning:</strong> This student has a scanned OMR sheet and score recorded. Deleting them will **permanently delete their OMR scan, answers, and results**!
+        </span>
     </div>
+    {% endif %}
     
     <form method="post">
         {% csrf_token %}
