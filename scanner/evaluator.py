@@ -343,10 +343,10 @@ def evaluate_and_grade_submission(submission_id):
     """
     from participants.models import Participant
     
-    with transaction.atomic():
-        submission = OMRSubmission.objects.select_for_update().get(pk=submission_id)
-        
-        try:
+    try:
+        with transaction.atomic():
+            submission = OMRSubmission.objects.select_for_update().get(pk=submission_id)
+            
             # Use PIL to resize and orient the image first to prevent Out-of-Memory crashes on large files
             from PIL import Image, ImageOps
             image_path = submission.image.path
@@ -520,13 +520,15 @@ def evaluate_and_grade_submission(submission_id):
                 
             return True, "Evaluation completed successfully."
             
-        except Exception as e:
-            # Mark submission as ERROR
+    except Exception as e:
+        # Catch exception outside of atomic block so we can save 'ERROR' status successfully
+        try:
+            submission = OMRSubmission.objects.get(pk=submission_id)
             submission.status = 'ERROR'
             submission.error_message = str(e)
             submission.save()
-            
             # Delete any existing Result if it failed this time
             Result.objects.filter(submission=submission).delete()
-            
-            return False, f"Evaluation failed: {str(e)}"
+        except Exception:
+            pass
+        return False, f"Evaluation failed: {str(e)}"
