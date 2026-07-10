@@ -347,22 +347,31 @@ def evaluate_and_grade_submission(submission_id):
         submission = OMRSubmission.objects.select_for_update().get(pk=submission_id)
         
         try:
-            # Load image using OpenCV
+            # Use PIL to resize and orient the image first to prevent Out-of-Memory crashes on large files
+            from PIL import Image, ImageOps
             image_path = submission.image.path
+            
+            try:
+                with Image.open(image_path) as pil_img:
+                    # Auto-orient photo based on EXIF camera metadata
+                    pil_img = ImageOps.exif_transpose(pil_img)
+                    
+                    w, h = pil_img.size
+                    max_dimension = 1600
+                    if max(w, h) > max_dimension:
+                        scale = max_dimension / max(w, h)
+                        new_w = int(w * scale)
+                        new_h = int(h * scale)
+                        pil_img = pil_img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                    # Save back as a clean optimized JPEG
+                    pil_img.save(image_path, format="JPEG", quality=85)
+            except Exception as pil_err:
+                raise ValueError(f"Invalid image format or corrupt file. Ensure it is a valid JPEG/PNG. Details: {str(pil_err)}")
+                
+            # Load the resized/oriented image using OpenCV
             img = cv2.imread(image_path)
             if img is None:
                 raise ValueError("Could not load image file.")
-                
-            # If the image is large, resize it to a max width/height of 1600px to prevent Out-of-Memory crashes
-            max_dimension = 1600
-            h, w = img.shape[:2]
-            if max(h, w) > max_dimension:
-                scale = max_dimension / max(h, w)
-                new_w = int(w * scale)
-                new_h = int(h * scale)
-                img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
-                # Overwrite original image with resized version to save disk space and load fast in browser
-                cv2.imwrite(image_path, img)
                 
             # Convert to grayscale
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
