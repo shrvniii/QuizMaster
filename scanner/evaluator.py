@@ -258,9 +258,14 @@ def detect_exam_set(thresh):
     Detects which Exam Set bubble is filled (Set A or Set B).
     Returns 'SET_A', 'SET_B', or None if unclear.
     """
-    # Restored to theoretical PDF coordinates mapping
+    # PDF coords: A bubble at (73, 596), B bubble at (95, 596)
+    # Anchor grid: top-left (40,660), bottom-right (555,60) → warped 1000x1200
+    # warped_x = (pdf_x - 40) * 1000 / 515
+    # warped_y = (660 - pdf_y) * 2
+    # A: x = (73-40)*1000/515 ≈ 64,  y = (660-596)*2 = 128
+    # B: x = (95-40)*1000/515 ≈ 107, y = 128
     set_x_centers = [64, 107]
-    cy = 104
+    cy = 128
     bubble_r = 10
     # Lower threshold (0.35) for exam set bubbles (blank inside)
     fill_threshold = 0.35
@@ -397,8 +402,10 @@ def evaluate_and_grade_submission(submission_id):
                 if not detected_group:
                     raise ValueError("Could not clearly read the Group category bubble (Junior/Senior)")
                     
-                detected_set = detect_exam_set(thresh) or 'SET_A'
-                
+                detected_set = detect_exam_set(thresh)
+                if not detected_set:
+                    raise ValueError("Could not clearly read the Exam Set bubble (A or B). Please ensure the correct set bubble is fully filled.")
+
                 # Get or create participant
                 from schools.models import School
                 school_code = detected_roll[:2]
