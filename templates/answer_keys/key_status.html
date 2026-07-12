@@ -1,5 +1,13 @@
 {% extends 'base.html' %}
 
+{% block extra_css %}
+<style>
+    .card-border-locked    { border-top: 4px solid var(--success-color); }
+    .card-border-configured { border-top: 4px solid var(--accent-color); }
+    .card-border-pending   { border-top: 4px solid var(--warning-color); }
+</style>
+{% endblock %}
+
 {% block title %}Answer Keys{% endblock %}
 
 {% block page_title %}
@@ -36,7 +44,7 @@
 
 <div class="grid-2">
     {% for item in status_list %}
-        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 200px; border-top: 4px solid {% if item.configured %}{% if item.is_locked %}var(--success-color){% else %}var(--accent-color){% endif %}{% else %}var(--warning-color){% endif %};">
+        <div class="card {% if item.configured %}{% if item.is_locked %}card-border-locked{% else %}card-border-configured{% endif %}{% else %}card-border-pending{% endif %}" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 200px;">
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
                     <div>
