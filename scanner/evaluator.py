@@ -258,45 +258,46 @@ def detect_exam_set(thresh):
     Detects which Exam Set bubble is filled (Set A or Set B).
     Returns 'SET_A', 'SET_B', or None if unclear.
     """
-    # PDF coords: A bubble at (73, 596), B bubble at (95, 596)
-    # Anchor grid: top-left (40,660), bottom-right (555,60) → warped 1000x1200
-    # warped_x = (pdf_x - 40) * 1000 / 515
-    # warped_y = (660 - pdf_y) * 2
-    # A: x = (73-40)*1000/515 ≈ 64,  y = (660-596)*2 = 128
-    # B: x = (95-40)*1000/515 ≈ 107, y = 128
+    # PDF coords for old layout: (73, 608) and (95, 608) -> y = 104
+    # PDF coords for new layout: (73, 596) and (95, 596) -> y = 128
     set_x_centers = [64, 107]
-    cy = 128
     bubble_r = 10
     # Lower threshold (0.35) for exam set bubbles (blank inside)
     fill_threshold = 0.35
     
-    bubble_stats = []
-    for cx in set_x_centers:
-        x1 = int(cx - bubble_r)
-        y1 = int(cy - bubble_r)
-        x2 = int(cx + bubble_r)
-        y2 = int(cy + bubble_r)
-        
-        bubble_crop = thresh[y1:y2, x1:x2]
-        mask = np.zeros(bubble_crop.shape, dtype="uint8")
-        cv2.circle(mask, (bubble_r, bubble_r), bubble_r - 2, 255, -1)
-        
-        masked_crop = cv2.bitwise_and(bubble_crop, bubble_crop, mask=mask)
-        total_pixels = cv2.countNonZero(mask)
-        if total_pixels == 0:
-            fill_ratio = 0
-        else:
-            filled_pixels = cv2.countNonZero(masked_crop)
-            fill_ratio = float(filled_pixels) / total_pixels
-        bubble_stats.append(fill_ratio)
-        
-    # Determine set based on which bubble is filled (> 60%)
-    if bubble_stats[0] > fill_threshold and bubble_stats[1] <= fill_threshold:
-        return 'SET_A'
-    elif bubble_stats[1] > fill_threshold and bubble_stats[0] <= fill_threshold:
-        return 'SET_B'
-    else:
-        return None
+    # We check both coordinates for backward-compatibility with older prints
+    for cy in [128, 104]:
+        bubble_stats = []
+        for cx in set_x_centers:
+            x1 = int(cx - bubble_r)
+            y1 = int(cy - bubble_r)
+            x2 = int(cx + bubble_r)
+            y2 = int(cy + bubble_r)
+            
+            # Boundary guard checks
+            if y1 < 0 or y2 > thresh.shape[0] or x1 < 0 or x2 > thresh.shape[1]:
+                continue
+                
+            bubble_crop = thresh[y1:y2, x1:x2]
+            mask = np.zeros(bubble_crop.shape, dtype="uint8")
+            cv2.circle(mask, (bubble_r, bubble_r), bubble_r - 2, 255, -1)
+            
+            masked_crop = cv2.bitwise_and(bubble_crop, bubble_crop, mask=mask)
+            total_pixels = cv2.countNonZero(mask)
+            if total_pixels == 0:
+                fill_ratio = 0
+            else:
+                filled_pixels = cv2.countNonZero(masked_crop)
+                fill_ratio = float(filled_pixels) / total_pixels
+            bubble_stats.append(fill_ratio)
+            
+        if len(bubble_stats) == 2:
+            if bubble_stats[0] > fill_threshold and bubble_stats[1] <= fill_threshold:
+                return 'SET_A'
+            elif bubble_stats[1] > fill_threshold and bubble_stats[0] <= fill_threshold:
+                return 'SET_B'
+                
+    return None
 
 def detect_group(thresh):
     """
