@@ -881,12 +881,6 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmUploadBtn.addEventListener('click', function() {
             if (!window.capturedCanvas) return;
             
-            // Disable button immediately to prevent double-submission
-            confirmUploadBtn.disabled = true;
-            confirmUploadBtn.style.opacity = '0.5';
-            confirmUploadBtn.style.cursor = 'not-allowed';
-            confirmUploadBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> <span>Uploading...</span>';
-            
             closeScanner();
             
             window.capturedCanvas.toBlob(function(blob) {
